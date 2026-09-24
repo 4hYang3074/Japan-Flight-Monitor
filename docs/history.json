@@ -1,0 +1,145 @@
+[
+{
+"date": "2026-09-25",
+"route": "KUL-KIX",
+"airline": "AirAsia X",
+"n": 32,
+"min": 1749,
+"max": 2875,
+"median": 1930,
+"avg": 2107,
+"min_od": "2027-04-13"
+},
+{
+"date": "2026-09-25",
+"route": "KUL-KIX",
+"airline": "混搭（去回不同航司）",
+"n": 32,
+"min": 1536,
+"max": 2798,
+"median": 2190,
+"avg": 2175,
+"min_od": "2027-04-20"
+},
+{
+"date": "2026-09-25",
+"route": "KUL-KIX",
+"airline": "Malaysia Airlines",
+"n": 32,
+"min": 4494,
+"max": 6692,
+"median": 5841,
+"avg": 5712,
+"min_od": "2027-04-16"
+},
+{
+"date": "2026-09-25",
+"route": "KUL-KIX",
+"airline": "AirAsia",
+"n": 7,
+"min": 2642,
+"max": 3389,
+"median": 2841,
+"avg": 2885,
+"min_od": "2027-03-20"
+},
+{
+"date": "2026-09-25",
+"route": "KUL-KIX",
+"airline": "Scoot",
+"n": 6,
+"min": 2340,
+"max": 3513,
+"median": 2638,
+"avg": 2794,
+"min_od": "2027-04-12"
+},
+{
+"date": "2026-09-25",
+"route": "KUL-KIX",
+"airline": "THAI",
+"n": 9,
+"min": 3668,
+"max": 4470,
+"median": 3668,
+"avg": 3862,
+"min_od": "2027-03-21"
+},
+{
+"date": "2026-09-25",
+"route": "KUL-KIX",
+"airline": "Korean Air",
+"n": 5,
+"min": 4544,
+"max": 4544,
+"median": 4544,
+"avg": 4544,
+"min_od": "2027-03-28"
+},
+{
+"date": "2026-09-25",
+"route": "SIN-KIX",
+"airline": "混搭（去回不同航司）",
+"n": 32,
+"min": 1812,
+"max": 2649,
+"median": 2182,
+"avg": 2169,
+"min_od": "2027-04-11"
+},
+{
+"date": "2026-09-25",
+"route": "SIN-KIX",
+"airline": "Singapore Airlines",
+"n": 32,
+"min": 2657,
+"max": 4196,
+"median": 3714,
+"avg": 3490,
+"min_od": "2027-04-14"
+},
+{
+"date": "2026-09-25",
+"route": "SIN-KIX",
+"airline": "Scoot",
+"n": 32,
+"min": 2007,
+"max": 3120,
+"median": 2292,
+"avg": 2457,
+"min_od": "2027-04-13"
+},
+{
+"date": "2026-09-25",
+"route": "SIN-KIX",
+"airline": "Peach Aviation",
+"n": 2,
+"min": 2589,
+"max": 3229,
+"median": 2909,
+"avg": 2909,
+"min_od": "2027-03-20"
+},
+{
+"date": "2026-09-25",
+"route": "SIN-KIX",
+"airline": "Cebu Pacific",
+"n": 14,
+"min": 1973,
+"max": 2525,
+"median": 2019,
+"avg": 2139,
+"min_od": "2027-04-11"
+},
+{
+"date": "2026-09-25",
+"route": "SIN-KIX",
+"airline": "Cathay Pacific",
+"n": 3,
+"min": 3694,
+"max": 3694,
+"median": 3694,
+"avg": 3694,
+"min_od": "2027-04-08"
+}
+]
