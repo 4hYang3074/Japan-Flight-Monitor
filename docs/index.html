@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>关西樱花季机票监控</title>
+<style>
+:root{--bg:#f7f6f3;--card:#fff;--ink:#1d1d1f;--muted:#6b6b70;--line:#e4e2dd;--accent:#d4577f;--good:#1f8a4c;--good-bg:#e6f4ec;--bad:#c0392b;--bad-bg:#fbeaea;--mid-bg:#f1f0ec;--chip:#efedea}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--card:#1d1d20;--ink:#ececef;--muted:#9a9aa2;--line:#2e2e33;--accent:#f08bab;--good:#5fd08f;--good-bg:#183224;--bad:#ff7b6e;--bad-bg:#3a1c1a;--mid-bg:#26262a;--chip:#2a2a2f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.wrap{max-width:1280px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:4px 0 6px}
+h1 span{color:var(--accent)}
+.status{color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:4px 14px}
+.warn{background:var(--bad-bg);color:var(--bad);padding:8px 12px;border-radius:8px;margin-top:10px;font-size:13px}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin:14px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card h2{font-size:15px;margin:0 0 8px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.kpi b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
+.kpi small{color:var(--muted);font-size:11.5px}
+.card ol{margin:6px 0 0;padding-left:18px;font-size:13px}
+.card li{margin:2px 0}
+.cov{font-size:12px;color:var(--muted);margin-top:6px}
+.cov .miss{color:var(--bad)}
+.tabs{display:flex;gap:6px;margin:6px 0 10px}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px;border-radius:999px;cursor:pointer;font-size:14px}
+.tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.filters{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:13px}
+.filters label{display:flex;align-items:center;gap:5px}
+.filters select,.filters input[type=date]{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit}
+.chips{display:flex;gap:4px}
+.chip{border:1px solid var(--line);background:var(--chip);color:var(--muted);border-radius:6px;padding:2px 8px;cursor:pointer;font:inherit}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.count{color:var(--muted);margin-left:auto}
+.tbl{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--card);text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;user-select:none}
+th.sorted{color:var(--ink)}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.al{font-weight:600}
+.tm{white-space:nowrap}
+.sub{color:var(--muted);font-size:12px}
+.price{font-weight:700;font-size:15px;white-space:nowrap}
+.rel{display:inline-block;border-radius:5px;padding:1px 6px;font-size:12px;white-space:nowrap}
+.rel.g{background:var(--good-bg);color:var(--good)}.rel.r{background:var(--bad-bg);color:var(--bad)}.rel.m{background:var(--mid-bg);color:var(--muted)}
+.drop{color:var(--good);font-size:12px}.rise{color:var(--bad);font-size:12px}
+.sk{font-size:12px;white-space:nowrap}.sk.core{color:var(--accent);font-weight:600}
+.more{display:block;margin:12px auto;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 18px;border-radius:999px;cursor:pointer;font:inherit}
+td.c-x{display:none}
+.foot{color:var(--muted);font-size:12px;margin:18px 0 8px}
+@media (max-width:760px){
+  thead{display:none}
+  table,tbody{display:block;width:100%}
+  tr{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:12px;border-bottom:1px solid var(--line)}
+  td{display:block;border:0;padding:0}
+  td.c-o::before,td.c-r::before{content:attr(data-l);display:block;color:var(--muted);font-size:11px}
+  .c-d{order:1}.c-p{order:2;text-align:right}.c-o{order:3}.c-r{order:4}
+  td.c-x{order:5;grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12px}
+  .c-n,.c-rel,.c-bag,.c-sk{display:none}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>2027 关西<span>樱花季</span>机票监控</h1>
+  <div class="status" id="status">载入中…</div>
+  <div id="warn"></div>
+  <div class="summary" id="summary"></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="filters" id="filters">
+    <label>晚数 <span class="chips" id="nights"></span></label>
+    <label><input type="checkbox" id="direct"> 只看直飞</label>
+    <label>航司 <select id="airline"><option value="">全部</option></select></label>
+    <label>樱花 <select id="sakura"><option value="">全部</option><option>核心窗口</option><option>接近核心</option><option>较早</option><option>较晚</option></select></label>
+    <label>出发 <input type="date" id="from"> – <input type="date" id="to"></label>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr>
+      <th data-s="od">出发 / 回程</th><th data-s="n">晚数</th><th data-s="oal">去程</th><th data-s="ral">回程</th>
+      <th data-s="p">每人往返价</th><th data-s="p">相对平均</th><th>托运行李</th><th data-s="sk">樱花</th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+  <button class="more" id="more">显示更多</button>
+  <div class="foot" id="foot"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const PAGE = 60;
+let D, route, shown = PAGE, sortKey = "p", sortDir = 1;
+const nightsOn = new Set();
+
+const fmtD = s => { const [, m, d] = s.split("-"); return `${+m}/${+d}`; };
+const addDays = (s, n) => { const t = new Date(s + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+const rm = n => "RM" + n.toLocaleString("en-US");
+const myt = iso => new Date(iso).toLocaleString("zh-CN", { timeZone: "Asia/Kuala_Lumpur", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function dateList(dates, n) {
+  const runs = [];
+  for (const d of dates) {
+    const last = runs[runs.length - 1];
+    if (last && addDays(last[1], 1) === d) last[1] = d; else runs.push([d, d]);
+  }
+  const f = off => runs.map(([a, b]) => a === b ? fmtD(addDays(a, off)) : `${fmtD(addDays(a, off))}–${fmtD(addDays(b, off))}`).join("、");
+  return { out: f(0), ret: f(n) };
+}
+function relBadge(r) {
+  if (r.rel == null) return "";
+  if (Math.abs(r.rel) <= 3) return `<span class="rel m">接近平均</span>`;
+  return r.rel < 0 ? `<span class="rel g">低于平均 ${Math.abs(r.rel)}%</span>` : `<span class="rel r">高于平均 ${r.rel}%</span>`;
+}
+function leg(l) {
+  const via = l.via.length ? `经 ${l.via.join("、")} 转机 · ${Math.floor(l.min / 60)}h${l.min % 60 ? (l.min % 60) + "m" : ""}` : "直飞";
+  return `<div class="al">${esc(l.al)}</div><div class="tm">${l.dep} → ${l.arr}</div><div class="sub">${via}</div>`;
+}
+function chg(r) {
+  if (!r.chg) return "";
+  return r.chg < 0 ? `<div class="drop">↓ 比上次降 ${rm(-r.chg)}</div>` : `<div class="rise">↑ 比上次涨 ${rm(r.chg)}</div>`;
+}
+function short(r) {
+  const dl = dateList(r.dates, r.n);
+  return `<b>${rm(r.p)}</b> · ${dl.out} 出发 ${r.n}晚 · ${esc(r.o.al)} ${r.o.dep}${r.o.al !== r.r.al ? " / 回 " + esc(r.r.al) : ""}`;
+}
+
+function renderHeader() {
+  const covOk = D.routes.reduce((s, r) => s + Object.values(r.coverage).filter(c => c.found > 0).length, 0);
+  const covAll = D.routes.reduce((s, r) => s + Object.keys(r.coverage).length, 0);
+  const samples = D.routes.reduce((s, r) => s + (r.stats ? r.stats.n : 0), 0);
+  $("status").innerHTML = [
+    `扫描出发日期 ${fmtD(D.window[0])}–${fmtD(D.window[1])}`,
+    `直飞航司覆盖 ${covOk}/${covAll}`,
+    `已确认价格样本 ${samples.toLocaleString()}`,
+    `更新于 ${myt(D.scanned_at)}（马来西亚时间）`,
+  ].map(s => `<span>${s}</span>`).join("");
+  const w = [...D.status];
+  if (D.errors) w.push(`本次有 ${D.errors} 个查询出错，相关日期可能缺少数据`);
+  $("warn").innerHTML = w.map(s => `<div class="warn">${esc(s)}</div>`).join("");
+
+  $("summary").innerHTML = D.routes.map(r => {
+    const s = r.stats;
+    if (!s) return `<div class="card"><h2>${esc(r.name)}</h2>暂无已确认价格</div>`;
+    const p = r.prev_stats;
+    const delta = p && p.min !== s.min ? (s.min < p.min ? ` <span class="drop">↓${rm(p.min - s.min)}</span>` : ` <span class="rise">↑${rm(s.min - p.min)}</span>`) : "";
+    const cov = Object.values(r.coverage).map(c => c.found ? `${esc(c.airline)} ${c.found}/${c.days}天` : `<span class="miss">${esc(c.airline)} 未返回</span>`).join(" · ");
+    return `<div class="card"><h2>${esc(r.name)}${r.stale ? ' <span class="rise">（沿用上次数据）</span>' : ""}</h2>
+      <div class="kpis">
+        <div class="kpi"><b>${rm(s.min)}${delta}</b><small>最低</small></div>
+        <div class="kpi"><b>${rm(s.avg)}</b><small>平均</small></div>
+        <div class="kpi"><b>${rm(s.median)}</b><small>中位数</small></div>
+        <div class="kpi"><b>${rm(s.max)}</b><small>最高</small></div>
+      </div>
+      <div class="sub">每人往返价 · ${D.core_nights.join("/")}晚组合 · ${s.n.toLocaleString()} 个样本</div>
+      ${r.cheapest ? `<div style="margin-top:6px">最便宜：${short(r.cheapest)}</div>` : ""}
+      ${r.top.length ? `<div style="margin-top:6px">樱花核心期最便宜：<ol>${r.top.map(t => `<li>${short(t)}</li>`).join("")}</ol></div>` : ""}
+      <div class="cov">直飞：${cov}</div></div>`;
+  }).join("");
+
+  $("tabs").innerHTML = D.routes.map((r, i) => `<button class="tab${i === 0 ? " on" : ""}" data-i="${i}">${esc(r.name)}</button>`).join("");
+  $("tabs").onclick = e => { const b = e.target.closest(".tab"); if (!b) return; document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t === b)); selectRoute(+b.dataset.i); };
+
+  const allN = [...new Set(D.routes.flatMap(r => r.rows.map(x => x.n)))].sort((a, b) => a - b);
+  D.core_nights.forEach(n => nightsOn.add(n));
+  $("nights").innerHTML = allN.map(n => `<button class="chip${nightsOn.has(n) ? " on" : ""}" data-n="${n}">${n}</button>`).join("");
+  $("nights").onclick = e => { const b = e.target.closest(".chip"); if (!b) return; e.preventDefault(); const n = +b.dataset.n; nightsOn.has(n) ? nightsOn.delete(n) : nightsOn.add(n); b.classList.toggle("on"); reset(); };
+  $("foot").innerHTML = `价格来源：Google Flights 实时报价，每个价格都是当次查询实际返回的数字，未做任何推算；订票时以航司结账页为准。
+    “往返票”=同航司指定去回程的往返票价；“单程×2”=两张单程票价相加。时间均为当地时间。
+    樱花参考：大阪满开 ${fmtD(D.sakura.full_bloom)}（${esc(D.sakura.source)}）。转机航班只收录 Google 返回的每日最便宜 3 个、总时长 18 小时内的一次转机选项。`;
+}
+
+function selectRoute(i) {
+  route = D.routes[i];
+  const sel = $("airline"), cur = sel.value;
+  const als = [...new Set(route.rows.flatMap(r => [r.o.al, r.r.al]))].sort();
+  sel.innerHTML = `<option value="">全部</option>` + als.map(a => `<option>${esc(a)}</option>`).join("");
+  sel.value = als.includes(cur) ? cur : "";
+  reset();
+}
+function reset() { shown = PAGE; renderRows(); }
+
+function filtered() {
+  const al = $("airline").value, sk = $("sakura").value, dir = $("direct").checked, f = $("from").value, t = $("to").value;
+  let rows = route.rows.filter(r =>
+    nightsOn.has(r.n) && (!dir || r.direct) && (!al || r.o.al === al || r.r.al === al) &&
+    (!sk || r.sks.includes(sk)) && (!f || r.dates[r.dates.length - 1] >= f) && (!t || r.dates[0] <= t));
+  const val = {
+    p: r => r.p, od: r => r.od, n: r => r.n, oal: r => r.o.al + r.o.dep, ral: r => r.r.al + r.r.dep,
+    sk: r => ["核心窗口", "接近核心", "较早", "较晚"].indexOf(r.sks[0]),
+  }[sortKey];
+  return rows.sort((a, b) => { const x = val(a), y = val(b); return (x < y ? -1 : x > y ? 1 : a.p - b.p) * sortDir; });
+}
+
+function renderRows() {
+  const rows = filtered();
+  $("count").textContent = `${rows.length.toLocaleString()} 个组合`;
+  $("rows").innerHTML = rows.slice(0, shown).map(r => {
+    const dl = dateList(r.dates, r.n);
+    const sk = r.sks.map(s => `<span class="sk${s === "核心窗口" ? " core" : ""}">${s}</span>`).join(" ");
+    return `<tr>
+      <td class="c-d"><div class="tm"><b>${dl.out}</b> 出发</div><div class="sub">${dl.ret} 回程</div></td>
+      <td class="c-n">${r.n}晚</td>
+      <td class="c-o" data-l="去程">${leg(r.o)}</td>
+      <td class="c-r" data-l="回程">${leg(r.r)}</td>
+      <td class="c-p"><div class="price">${rm(r.p)}</div><div class="sub">${r.pt} · 抓取 ${myt(r.f)}</div>${chg(r)}</td>
+      <td class="c-rel">${relBadge(r)}</td>
+      <td class="c-bag">${esc(r.bag)}</td>
+      <td class="c-sk">${sk}</td>
+      <td class="c-x"><b>${r.n}晚</b>${relBadge(r)}<span>${esc(r.bag)}</span>${sk}</td></tr>`;
+  }).join("");
+  $("more").style.display = rows.length > shown ? "block" : "none";
+  document.querySelectorAll("th").forEach(th => th.classList.toggle("sorted", th.dataset.s === sortKey));
+}
+
+$("more").onclick = () => { shown += PAGE * 2; renderRows(); };
+["airline", "sakura", "direct", "from", "to"].forEach(id => $(id).onchange = reset);
+document.querySelector("thead").onclick = e => {
+  const k = e.target.dataset.s; if (!k) return;
+  sortDir = sortKey === k ? -sortDir : 1; sortKey = k; renderRows();
+};
+
+fetch("data.json", { cache: "no-store" }).then(r => r.json()).then(d => {
+  D = d; renderHeader(); selectRoute(0);
+}).catch(() => { $("status").textContent = "数据载入失败，请稍后刷新。"; });
+</script>
+</body>
+</html>

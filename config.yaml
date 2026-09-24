@@ -1,0 +1,56 @@
+currency: MYR
+
+# 樱花正式预测发布前的默认扫描窗口（出发日期）
+default_window:
+  start: 2027-03-20
+  end: 2027-04-20
+
+# 大阪满开日期。official=false 表示使用历史平年值；正式预测发布后改为预测日期并设 official=true，
+# 扫描窗口会自动变成 满开日 ±15 天。
+sakura:
+  full_bloom: 2027-04-04
+  official: false
+  source: 日本气象厅 大阪满开平年值（1991–2020），正式预测未发布
+
+nights: [5, 6, 7, 8, 9]
+core_nights: [6, 7, 8]
+
+# 转机航班：每天每个方向最多保留几个最便宜的、总时长上限（小时）
+max_connections_per_day: 3
+max_connection_hours: 18
+
+routes:
+  - id: KUL-KIX
+    name: 吉隆坡 KUL ↔ 大阪 KIX
+    origin: KUL
+    dest: KIX
+    direct_airlines:
+      D7: AirAsia X
+      MH: Malaysia Airlines
+      OD: Batik Air Malaysia
+    # 全服务航司的往返票常比两张单程便宜很多，需要额外查往返价
+    roundtrip_airlines: [MH, OD]
+  - id: SIN-KIX
+    name: 新加坡 SIN ↔ 大阪 KIX
+    origin: SIN
+    dest: KIX
+    direct_airlines:
+      SQ: Singapore Airlines
+      TR: Scoot
+      MM: Peach Aviation
+    roundtrip_airlines: [SQ]
+
+airport_utc_offset:
+  KUL: 8
+  SIN: 8
+  KIX: 9
+
+# 最低票价所含的免费托运行李（每人）。只填官网确认过的数据，未确认的写 null，页面会显示“待确认”。
+# 价格按 Google Flights 显示的最低票价档计算，所以这里记录最低票价档的托运额度。
+baggage:
+  D7: {kg: 0, note: Low Fare 不含托运（Value Pack 含 20kg）, source: "https://www.airasia.com/aa/about-us/en/gb/fares.html", checked: 2026-09-25}
+  MH: {kg: 35, note: 马来西亚–日本航线经济舱 Value/Basic/Flex 均含 35kg, source: "https://www.malaysiaairlines.com/us/en/travel-info/baggage/checked-baggage.html", checked: 2026-09-25}
+  OD: {kg: null, note: 待确认, source: null, checked: null}
+  SQ: {kg: 25, note: 经济舱 Lite/Value 含 25kg, source: "https://www.singaporeair.com/en_UK/sg/travel-info/baggage/checked-baggage/", checked: 2026-09-25}
+  TR: {kg: 0, note: 经济舱不含托运（可加购 20–40kg）, source: "https://www.flyscoot.com/en/plan/booking-your-flight/baggage", checked: 2026-09-25}
+  MM: {kg: 0, note: 最低 Minimum 票价不含托运, source: "https://www.flypeach.com/lm/fares/fare_type", checked: 2026-09-25}
