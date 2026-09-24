@@ -50,6 +50,17 @@ tr:last-child td{border-bottom:0}
 .sk{font-size:12px;white-space:nowrap}.sk.core{color:var(--accent);font-weight:600}
 .more{display:block;margin:12px auto;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 18px;border-radius:999px;cursor:pointer;font:inherit}
 td.c-x{display:none}
+.al-tbl{margin-bottom:10px}
+.al-tbl thead th{cursor:default}
+#airlines tr{cursor:pointer}
+#airlines tr:hover td,#airlines tr.on td{background:var(--mid-bg)}
+.cal{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;display:none}
+.cal h3{font-size:13px;margin:0 0 8px;font-weight:600}
+.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:5px}
+.day{border-radius:7px;padding:5px 6px;font-size:12px;background:var(--mid-bg);line-height:1.3}
+.day b{display:block;font-size:13px;font-variant-numeric:tabular-nums}
+.day.g{background:var(--good-bg);color:var(--good)}.day.r{background:var(--bad-bg);color:var(--bad)}
+.day.none{opacity:.45}
 .foot{color:var(--muted);font-size:12px;margin:18px 0 8px}
 @media (max-width:760px){
   thead{display:none}
@@ -60,6 +71,9 @@ td.c-x{display:none}
   .c-d{order:1}.c-p{order:2;text-align:right}.c-o{order:3}.c-r{order:4}
   td.c-x{order:5;grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12px}
   .c-n,.c-rel,.c-bag,.c-sk{display:none}
+  #airlines tr{grid-template-columns:1fr 1fr 1fr}
+  #airlines td:first-child{grid-column:1/-1}
+  #airlines td[data-l]::before{content:attr(data-l);display:block;color:var(--muted);font-size:11px}
   .kpis{grid-template-columns:repeat(2,1fr)}
 }
 </style>
@@ -71,6 +85,11 @@ td.c-x{display:none}
   <div id="warn"></div>
   <div class="summary" id="summary"></div>
   <div class="tabs" id="tabs"></div>
+  <div class="tbl al-tbl"><table>
+    <thead><tr><th>航空公司</th><th>最低</th><th>平均</th><th>最高</th><th>历史最低</th><th>历史平均</th><th>比上次</th></tr></thead>
+    <tbody id="airlines"></tbody>
+  </table></div>
+  <div class="cal" id="cal"></div>
   <div class="filters" id="filters">
     <label>晚数 <span class="chips" id="nights"></span></label>
     <label><input type="checkbox" id="direct"> 只看直飞</label>
@@ -112,8 +131,8 @@ function dateList(dates, n) {
 }
 function relBadge(r) {
   if (r.rel == null) return "";
-  if (Math.abs(r.rel) <= 3) return `<span class="rel m">接近平均</span>`;
-  return r.rel < 0 ? `<span class="rel g">低于平均 ${Math.abs(r.rel)}%</span>` : `<span class="rel r">高于平均 ${r.rel}%</span>`;
+  if (Math.abs(r.rel) <= 3) return `<span class="rel m">接近该航司平均</span>`;
+  return r.rel < 0 ? `<span class="rel g">低于该航司平均 ${Math.abs(r.rel)}%</span>` : `<span class="rel r">高于该航司平均 ${r.rel}%</span>`;
 }
 function leg(l) {
   const via = l.via.length ? `经 ${l.via.join("、")} 转机 · ${Math.floor(l.min / 60)}h${l.min % 60 ? (l.min % 60) + "m" : ""}` : "直飞";
@@ -143,20 +162,13 @@ function renderHeader() {
   $("warn").innerHTML = w.map(s => `<div class="warn">${esc(s)}</div>`).join("");
 
   $("summary").innerHTML = D.routes.map(r => {
-    const s = r.stats;
-    if (!s) return `<div class="card"><h2>${esc(r.name)}</h2>暂无已确认价格</div>`;
-    const p = r.prev_stats;
-    const delta = p && p.min !== s.min ? (s.min < p.min ? ` <span class="drop">↓${rm(p.min - s.min)}</span>` : ` <span class="rise">↑${rm(s.min - p.min)}</span>`) : "";
+    if (!r.airlines || !r.airlines.length) return `<div class="card"><h2>${esc(r.name)}</h2>暂无已确认价格</div>`;
     const cov = Object.values(r.coverage).map(c => c.found ? `${esc(c.airline)} ${c.found}/${c.days}天` : `<span class="miss">${esc(c.airline)} 未返回</span>`).join(" · ");
+    const best = r.airlines.filter(a => !a.mixed).slice(0, 3);
     return `<div class="card"><h2>${esc(r.name)}${r.stale ? ' <span class="rise">（沿用上次数据）</span>' : ""}</h2>
-      <div class="kpis">
-        <div class="kpi"><b>${rm(s.min)}${delta}</b><small>最低</small></div>
-        <div class="kpi"><b>${rm(s.avg)}</b><small>平均</small></div>
-        <div class="kpi"><b>${rm(s.median)}</b><small>中位数</small></div>
-        <div class="kpi"><b>${rm(s.max)}</b><small>最高</small></div>
-      </div>
-      <div class="sub">每人往返价 · ${D.core_nights.join("/")}晚组合 · ${s.n.toLocaleString()} 个样本</div>
-      ${r.cheapest ? `<div style="margin-top:6px">最便宜：${short(r.cheapest)}</div>` : ""}
+      <div class="kpis">${best.map(a => `<div class="kpi"><b>${rm(a.min)}</b><small>${esc(a.name)} 最低</small></div>`).join("")}</div>
+      <div class="sub">每人经济舱往返 · ${D.core_nights.join("/")}晚</div>
+      ${r.cheapest ? `<div style="margin-top:6px">全场最便宜：${short(r.cheapest)}</div>` : ""}
       ${r.top.length ? `<div style="margin-top:6px">樱花核心期最便宜：<ol>${r.top.map(t => `<li>${short(t)}</li>`).join("")}</ol></div>` : ""}
       <div class="cov">直飞：${cov}</div></div>`;
   }).join("");
@@ -173,12 +185,46 @@ function renderHeader() {
     樱花参考：大阪满开 ${fmtD(D.sakura.full_bloom)}（${esc(D.sakura.source)}）。转机航班只收录 Google 返回的每日最便宜 3 个、总时长 18 小时内的一次转机选项。`;
 }
 
+function trend(a) {
+  if (!a.prev) return `<span class="sub">首次记录</span>`;
+  const d = a.min - a.prev.min;
+  if (!d) return `<span class="sub">最低价持平</span>`;
+  return d < 0 ? `<span class="drop">最低 ↓${rm(-d)}</span>` : `<span class="rise">最低 ↑${rm(d)}</span>`;
+}
+function renderAirlines() {
+  const cur = $("airline").value;
+  $("airlines").innerHTML = (route.airlines || []).map(a => `<tr data-a="${esc(a.name)}" class="${a.name === cur ? "on" : ""}">
+    <td><div class="al">${esc(a.name)}</div><div class="sub">${a.direct ? "有直飞" : "转机"} · ${a.n} 个出发日</div></td>
+    <td data-l="最低"><div class="price">${rm(a.min)}</div><div class="sub">${fmtD(a.low.od)} 出发 ${a.low.n}晚 ${a.low.dep}</div></td>
+    <td data-l="平均"><div class="price">${rm(a.avg)}</div><div class="sub">中位数 ${rm(a.median)}</div></td>
+    <td data-l="最高"><div class="price">${rm(a.max)}</div><div class="sub">${fmtD(a.high.od)} 出发</div></td>
+    <td data-l="历史最低"><b>${rm(a.all.min)}</b><div class="sub">${a.all.min_od ? fmtD(a.all.min_od) + " 出发 · " : ""}${fmtD(a.all.min_seen)} 查到</div></td>
+    <td data-l="历史平均"><b>${rm(a.all.avg)}</b><div class="sub">${a.all.scans} 次扫描</div></td>
+    <td data-l="比上次">${trend(a)}</td></tr>`).join("");
+  renderCal();
+}
+function renderCal() {
+  const a = (route.airlines || []).find(x => x.name === $("airline").value);
+  if (!a) { $("cal").style.display = "none"; return; }
+  const [s, e] = D.window;
+  let html = "", d = s;
+  while (d <= e) {
+    const p = a.daily[d];
+    const rel = p == null ? null : (p - a.avg) / a.avg * 100;
+    const cls = p == null ? "none" : Math.abs(rel) <= 3 ? "" : rel < 0 ? "g" : "r";
+    html += `<div class="day ${cls}">${fmtD(d)}<b>${p == null ? "—" : rm(p)}</b></div>`;
+    d = addDays(d, 1);
+  }
+  $("cal").innerHTML = `<h3>${esc(a.name)} · 每个出发日期最便宜的往返价（${D.core_nights.join("/")}晚，绿色=低于该航司平均，红色=高于）</h3><div class="days">${html}</div>`;
+  $("cal").style.display = "block";
+}
 function selectRoute(i) {
   route = D.routes[i];
   const sel = $("airline"), cur = sel.value;
-  const als = [...new Set(route.rows.flatMap(r => [r.o.al, r.r.al]))].sort();
+  const als = (route.airlines || []).map(a => a.name);
   sel.innerHTML = `<option value="">全部</option>` + als.map(a => `<option>${esc(a)}</option>`).join("");
   sel.value = als.includes(cur) ? cur : "";
+  renderAirlines();
   reset();
 }
 function reset() { shown = PAGE; renderRows(); }
@@ -186,7 +232,7 @@ function reset() { shown = PAGE; renderRows(); }
 function filtered() {
   const al = $("airline").value, sk = $("sakura").value, dir = $("direct").checked, f = $("from").value, t = $("to").value;
   let rows = route.rows.filter(r =>
-    nightsOn.has(r.n) && (!dir || r.direct) && (!al || r.o.al === al || r.r.al === al) &&
+    nightsOn.has(r.n) && (!dir || r.direct) && (!al || r.ak === al) &&
     (!sk || r.sks.includes(sk)) && (!f || r.dates[r.dates.length - 1] >= f) && (!t || r.dates[0] <= t));
   const val = {
     p: r => r.p, od: r => r.od, n: r => r.n, oal: r => r.o.al + r.o.dep, ral: r => r.r.al + r.r.dep,
@@ -217,7 +263,13 @@ function renderRows() {
 }
 
 $("more").onclick = () => { shown += PAGE * 2; renderRows(); };
-["airline", "sakura", "direct", "from", "to"].forEach(id => $(id).onchange = reset);
+["sakura", "direct", "from", "to"].forEach(id => $(id).onchange = reset);
+$("airline").onchange = () => { renderAirlines(); reset(); };
+$("airlines").onclick = e => {
+  const tr = e.target.closest("tr"); if (!tr) return;
+  $("airline").value = $("airline").value === tr.dataset.a ? "" : tr.dataset.a;
+  renderAirlines(); reset();
+};
 document.querySelector("thead").onclick = e => {
   const k = e.target.dataset.s; if (!k) return;
   sortDir = sortKey === k ? -sortDir : 1; sortKey = k; renderRows();

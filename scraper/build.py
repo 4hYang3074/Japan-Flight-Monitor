@@ -9,6 +9,7 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
 MIN_OK_RATIO = 0.3
+MIXED = "混搭（去回不同航司）"
 
 
 def load(p, default=None):
@@ -64,6 +65,7 @@ def combine(route_raw, cfg, bloom):
                     "od": od.isoformat(), "rd": rd.isoformat(), "n": n,
                     "o": leg_view(o), "r": leg_view(i),
                     "direct": o["stops"] == 0 and i["stops"] == 0,
+                    "ak": o["airline"] if o["airline"] == i["airline"] else MIXED,
                     "p": price, "pt": pt,
                     "bag": baggage_text([o["code"], i["code"]], cfg["baggage"]),
                     "sk": sakura_tag(od, n, bloom),
@@ -97,6 +99,42 @@ def merge_rows(rows):
     return merged
 
 
+def airline_stats(rid, rows, hist, today):
+    """按航司分别统计今天的价格，并把结果追加到 hist，再结合历史所有扫描算累计值。"""
+    groups = {}
+    for r in rows:
+        groups.setdefault(r["ak"], []).append(r)
+    out = []
+    for ak, g in groups.items():
+        daily = {}
+        for r in g:
+            daily[r["od"]] = min(daily.get(r["od"], r["p"]), r["p"])
+        # 统计对象：每个出发日期当天最便宜的价格
+        st = stats(list(daily.values()))
+        low = min(g, key=lambda r: (r["p"], r["od"]))
+        high_od = max(daily, key=lambda d: (daily[d], d))
+        high = min((r for r in g if r["od"] == high_od), key=lambda r: r["p"])
+        past = sorted((h for h in hist if h["route"] == rid and h["airline"] == ak), key=lambda h: h["date"])
+        prev = past[-1] if past else None
+        hist.append({"date": today, "route": rid, "airline": ak, **st, "min_od": low["od"]})
+        every = past + [hist[-1]]
+        lo = min(every, key=lambda h: (h["min"], h["date"]))
+        n_all = sum(h["n"] for h in every)
+        out.append({
+            "name": ak, "mixed": ak == MIXED, "direct": any(r["direct"] for r in g), **st,
+            "low": {"od": low["od"], "n": low["n"], "dep": low["o"]["dep"]},
+            "high": {"od": high["od"], "n": high["n"]},
+            "daily": dict(sorted(daily.items())),
+            "prev": {"min": prev["min"], "avg": prev["avg"], "date": prev["date"]} if prev else None,
+            "all": {"min": lo["min"], "min_od": lo.get("min_od"), "min_seen": lo["date"],
+                    "max": max(h["max"] for h in every),
+                    "avg": round(sum(h["avg"] * h["n"] for h in every) / n_all),
+                    "scans": len(every), "since": every[0]["date"]},
+        })
+    out.sort(key=lambda a: (a["mixed"], a["min"]))
+    return out
+
+
 def stats(prices):
     if not prices:
         return None
@@ -111,6 +149,7 @@ def main():
     prev_routes = {r["id"]: r for r in prev.get("routes", [])}
     bloom = cfg["sakura"]["full_bloom"]
     today = datetime.now(timezone(timedelta(hours=8))).date().isoformat()
+    hist = [h for h in load(DOCS / "history.json", []) if h["date"] != today and "airline" in h]
 
     routes_out, status_msgs = [], []
     for route in cfg["routes"]:
@@ -134,11 +173,14 @@ def main():
             old = prev_price.get(row_key(r))
             r["chg"] = r["p"] - old if old is not None else None
 
-        core = [r["p"] for r in rows if r["n"] in cfg["core_nights"]]
-        st = stats(core)
+        core_all = [r for r in rows if r["n"] in cfg["core_nights"]]
+        st = stats([r["p"] for r in core_all])
+        airlines = airline_stats(rid, core_all, hist, today)
+        by_ak = {a["name"]: a for a in airlines}
         merged = merge_rows(rows)
         for r in merged:
-            r["rel"] = round((r["p"] - st["avg"]) / st["avg"] * 100, 1) if st else None
+            a = by_ak.get(r["ak"])
+            r["rel"] = round((r["p"] - a["avg"]) / a["avg"] * 100, 1) if a else None
         merged.sort(key=lambda r: (r["p"], r["od"]))
 
         cov = {}
@@ -155,6 +197,7 @@ def main():
         routes_out.append({
             "id": rid, "name": route["name"], "raw_count": n_raw, "stale": False,
             "stats": st, "prev_stats": pr.get("stats") if pr else None,
+            "airlines": airlines,
             "cheapest": core_rows[0] if core_rows else None,
             "top": top, "coverage": cov, "rows": merged,
         })
@@ -172,11 +215,6 @@ def main():
     DOCS.mkdir(exist_ok=True)
     (DOCS / "data.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
-    hist = load(DOCS / "history.json", [])
-    hist = [h for h in hist if h["date"] != today]
-    for r in routes_out:
-        if r["stats"] and not r["stale"]:
-            hist.append({"date": today, "route": r["id"], **r["stats"]})
     (DOCS / "history.json").write_text(json.dumps(hist, ensure_ascii=False, indent=0), encoding="utf-8")
     print(f"built: " + ", ".join(f"{r['id']} rows={len(r['rows'])}" for r in routes_out))
 
