@@ -145,7 +145,7 @@ def scan_roundtrips(route, cfg, outbound, inbound, start, end, errors):
     return results
 
 
-def scan_day(frm, to, d, route, cfg, errors, coverage):
+def scan_day(frm, to, d, route, cfg, errors, coverage, only=None):
     cur = cfg["currency"]
     utc = cfg["airport_utc_offset"]
     found = {}
@@ -159,6 +159,8 @@ def scan_day(frm, to, d, route, cfg, errors, coverage):
             found[key] = rec
 
     for code, name in route["direct_airlines"].items():
+        if only and code not in only:
+            continue
         flights, err = fetch(frm, to, d, cur, airlines=[code], max_stops=0)
         now = datetime.now(timezone.utc).isoformat(timespec="seconds")
         if err:
@@ -171,6 +173,8 @@ def scan_day(frm, to, d, route, cfg, errors, coverage):
             add(r)
         time.sleep(SLEEP)
 
+    if only:
+        return list(found.values())
     flights, err = fetch(frm, to, d, cur)
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     if err:
@@ -195,23 +199,28 @@ def main():
         end = min(end, start + timedelta(days=int(os.environ["SCAN_LIMIT_DAYS"]) - 1))
     ret_end = end + timedelta(days=max(cfg["nights"]))
     ret_start = start + timedelta(days=min(cfg["nights"]))
-    out = {"window": [start.isoformat(), end.isoformat()], "routes": {}, "coverage": [], "errors": []}
+    # SCAN_ONLY=D7 之类：只查指定航司的直飞（加扫时段用），不查转机和往返价
+    only = set(filter(None, os.environ.get("SCAN_ONLY", "").split(",")))
+    out = {"window": [start.isoformat(), end.isoformat()], "routes": {}, "coverage": [], "errors": [],
+           "only": sorted(only)}
     t0 = time.time()
     for route in cfg["routes"]:
+        if only and not only & set(route["direct_airlines"]):
+            continue
         o, k = route["origin"], route["dest"]
         outbound, inbound = [], []
         for d in daterange(start, end):
-            outbound += scan_day(o, k, d, route, cfg, out["errors"], out["coverage"])
+            outbound += scan_day(o, k, d, route, cfg, out["errors"], out["coverage"], only)
             print(f"{o}->{k} {d} done", flush=True)
         for d in daterange(ret_start, ret_end):
-            inbound += scan_day(k, o, d, route, cfg, out["errors"], out["coverage"])
+            inbound += scan_day(k, o, d, route, cfg, out["errors"], out["coverage"], only)
             print(f"{k}->{o} {d} done", flush=True)
-        rts = scan_roundtrips(route, cfg, outbound, inbound, start, end, out["errors"])
+        rts = [] if only else scan_roundtrips(route, cfg, outbound, inbound, start, end, out["errors"])
         out["routes"][route["id"]] = {"outbound": outbound, "inbound": inbound, "roundtrip": rts}
     out["scanned_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     out["duration_s"] = round(time.time() - t0)
     (ROOT / "data").mkdir(exist_ok=True)
-    (ROOT / "data" / "raw.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+    (ROOT / "data" / ("raw_watch.json" if only else "raw.json")).write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"done in {out['duration_s']}s, errors={len(out['errors'])}")
 
 

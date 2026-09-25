@@ -139,6 +139,9 @@ td.c-x{display:none}
   <div class="concl" id="concl"></div>
   <div class="rule" id="rule"></div>
 
+  <h2 class="sec">④ AirAsia X 加扫时段观察 <small>周二 15:15、周三 18:15、周五 22:15 额外扫描，跟当天早上的价格比较</small></h2>
+  <div class="card" id="watch">还没有加扫记录，第一次加扫后显示。</div>
+
   <div class="foot" id="foot"></div>
 </div>
 <script>
@@ -340,8 +343,32 @@ $("main-head").onclick = e => {
   sortDir = sortKey === k ? -sortDir : 1; sortKey = k; renderRows();
 };
 
-fetch("data.json", { cache: "no-store" }).then(r => r.json()).then(d => {
+function renderWatch(list) {
+  const runs = list.flatMap(w => w.routes.filter(r => r.compared).map(r => ({ ...r, at: w.at, slot: w.slot })));
+  if (!runs.length) return;
+  const pct = v => v == null ? "—" : `${v > 0 ? "+" : ""}${v}%`;
+  const groups = {};
+  for (const r of runs) (groups[r.slot.slice(0, 5)] ||= []).push(r);
+  const summary = Object.entries(groups).map(([slot, rs]) => {
+    const avg = rs.reduce((s, r) => s + r.avg_diff_pct, 0) / rs.length;
+    const hits = rs.filter(r => r.best_drop).length;
+    return `<li><b>${slot}时</b>：${rs.length} 次，平均比早上 ${pct(Math.round(avg * 10) / 10)}，其中 ${hits} 次出现便宜 5% 以上的组合</li>`;
+  }).join("");
+  const recent = runs.slice(-10).reverse().map(r => `<tr>
+      <td>${myt(r.at)}<div class="sub">${esc(r.slot)}</div></td>
+      <td>${r.cheapest ? `<b>${rm(r.cheapest.p)}</b><div class="sub">${fmtD(r.cheapest.od)} 出发 ${r.cheapest.n}晚</div>` : "—"}</td>
+      <td>${r.cheaper} 个更便宜 / ${r.pricier} 个更贵<div class="sub">共比较 ${r.compared} 个组合</div></td>
+      <td>${pct(r.avg_diff_pct)}</td>
+      <td>${r.best_drop ? `<span class="drop">${rm(r.best_drop.was)} → ${rm(r.best_drop.p)}（${r.best_drop.pct}%）</span><div class="sub">${fmtD(r.best_drop.od)} 出发 ${r.best_drop.n}晚</div>` : `<span class="sub">无</span>`}</td></tr>`).join("");
+  $("watch").innerHTML = `<b>各时段累计结果</b>（负数＝比当天早上便宜）<ul>${summary}</ul>
+    <div class="tbl" style="margin-top:8px"><table><thead><tr><th>加扫时间</th><th>当次最便宜</th><th>跟早上同一组合比</th><th>平均差</th><th>最大降幅</th></tr></thead><tbody>${recent}</tbody></table></div>
+    <div class="hint">只比较 KUL↔KIX AirAsia X 直飞 ${D.core_nights.join("/")} 晚的同一组合（同日期、同航班）。累积几周后就能看出这些时段是不是真的比较便宜。</div>`;
+}
+
+const watchReq = fetch("watch.json", { cache: "no-store" }).then(r => r.ok ? r.json() : []).catch(() => []);
+fetch("data.json", { cache: "no-store" }).then(r => r.json()).then(async d => {
   D = d; renderTop(); selectRoute(0);
+  renderWatch(await watchReq);
 }).catch(() => { $("status").textContent = "数据载入失败，请稍后刷新（第一次扫描完成前没有数据）。"; });
 </script>
 </body>
