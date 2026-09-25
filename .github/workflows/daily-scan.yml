@@ -2,8 +2,9 @@ name: Daily flight scan
 
 on:
   schedule:
-    # 22:17 UTC = 马来西亚时间 06:17，扫描约 30–50 分钟，留出 GitHub 排队延迟，确保 8 点前更新完
+    # 马来西亚时间 06:17（确保 8 点前更新完）与 18:47（避开周三 18:15 的 AirAsia 加扫）
     - cron: "17 22 * * *"
+    - cron: "47 10 * * *"
   workflow_dispatch:
     inputs:
       limit_days:

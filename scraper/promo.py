@@ -8,7 +8,7 @@ import re
 import sys
 import urllib.request
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
 from selectolax.lexbor import LexborHTMLParser
@@ -26,6 +26,33 @@ SCOPE = re.compile(r"all seats|all flights|all routes|airasia x|\bd7\b|japan|osa
 BIG_SALE_BANNER = re.compile(r"mega ?sale|big ?sale|free ?seat|all ?seats", re.I)
 EXCLUDE = re.compile(r"\brides?\b|duty.?free|movetix|\bevent\b|insurance|philippines|thai airasia|indonesia|cambodia|\bphp\b|\bidr\b|\bthb\b", re.I)
 NEW_FILE = ROOT / "data" / "promo_new.json"
+DEADLINE = re.compile(r"(?:book(?:ing)?\s+by|until|till|ends?(?:\s+on)?|before|expir\w*(?:\s+on)?)\s+"
+                      r"(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})\.?,?\s+(\d{4})", re.I)
+BANNER_DATE = re.compile(r"_(\d{2})(\d{2})(\d{2})_")
+MONTHS = {m: i for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
+STALE_BANNER_DAYS = 45
+
+
+def deadline(text):
+    """找出“Book by 27 Sep 2026 / till 1 March 2026”这类订票截止日期，没有写就返回 None。"""
+    m = DEADLINE.search(text)
+    if not m or m.group(2)[:3].lower() not in MONTHS:
+        return None
+    try:
+        return date(int(m.group(3)), MONTHS[m.group(2)[:3].lower()], int(m.group(1)))
+    except ValueError:
+        return None
+
+
+def banner_date(code):
+    """官网横幅代码里的日期（如 MOVE_MEGASALE-Teaser_141024 → 2024-10-14）。"""
+    m = BANNER_DATE.search(f"{code}_")
+    if not m:
+        return None
+    try:
+        return date(2000 + int(m.group(3)), int(m.group(2)), int(m.group(1)))
+    except ValueError:
+        return None
 
 
 def get(url):
@@ -54,7 +81,8 @@ def from_promo_page():
                 if not title and BIG_SALE_BANNER.search(ban):
                     label = f"大促预告横幅（代码 {ban}）"
                 found[pid("page", label, sub)] = {"source": "AirAsia 官网促销页", "title": label.strip(),
-                                                  "detail": sub.strip(), "url": url}
+                                                  "detail": sub.strip(), "url": url, "banner": ban,
+                                                  "deadline_text": text}
             for v in o.values():
                 walk(v)
         elif isinstance(o, list):
@@ -81,7 +109,7 @@ def from_rss(url, days=30):
             continue
         found[pid("rss", link)] = {"source": "AirAsia 官方新闻室", "title": title,
                                    "detail": re.sub(r"\s+", " ", desc).strip()[:200], "url": link,
-                                   "published": when.date().isoformat()}
+                                   "published": when.date().isoformat(), "deadline_text": f"{title} {desc}"}
     return found
 
 
@@ -104,8 +132,14 @@ def check():
             current.update(fn())
         except Exception as e:
             errors.append(f"{name}: {type(e).__name__}: {e}")
+    today = datetime.now(timezone(timedelta(hours=8))).date()
     for k, p in current.items():
-        p["id"], p["relevant"] = k, relevant(p)
+        dl = deadline(p.pop("deadline_text", ""))
+        bd = banner_date(p.pop("banner", "") or "")
+        p["deadline"] = dl.isoformat() if dl else None
+        # 已过订票截止日，或横幅代码显示是很久以前的活动，都不算有用信息
+        p["expired"] = bool((dl and dl < today) or (bd and (today - bd).days > STALE_BANNER_DAYS))
+        p["id"], p["relevant"] = k, relevant(p) and not p["expired"]
     new = [p for k, p in current.items() if k not in state["seen"] and p["relevant"]]
     for k in current:
         state["seen"].setdefault(k, now)
@@ -130,7 +164,7 @@ def check():
 
 
 def report():
-    """写 Issue 内容：新促销 + 刚加扫的 AirAsia X 樱花期最便宜组合（与今早例行扫描比较）。"""
+    """写 Issue 内容：新促销 + 刚加扫的 AirAsia X 樱花期最便宜组合（与最近一次例行扫描比较）。"""
     cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
     new = load(NEW_FILE, [])
     raw = load(ROOT / "data" / "raw_watch.json")
@@ -149,7 +183,7 @@ def report():
                  if r["n"] in cfg["core_nights"] and r["sk"] in ("核心窗口", "接近核心")]
     for r in sorted(rows, key=lambda r: r["p"])[:8]:
         old = base.get(row_key(r))
-        cmp = "" if old is None else ("（与今早相同）" if old == r["p"] else f"（今早 RM{old:,}，{'降' if r['p'] < old else '涨'} RM{abs(r['p'] - old):,}）")
+        cmp = "" if old is None else ("（与上次例行扫描相同）" if old == r["p"] else f"（上次例行扫描 RM{old:,}，{'降' if r['p'] < old else '涨'} RM{abs(r['p'] - old):,}）")
         lines.append(f"- **RM{r['p']:,}** · {r['od'][5:].replace('-', '/')} 出发 {r['n']}晚 · 去 {r['o']['dep']} 回 {r['r']['dep']} {cmp}")
     if not rows:
         lines.append("- 这次加扫没有取得樱花期价格（可能促销尚未反映到 Google Flights，建议直接打开 AirAsia MOVE App 查看）。")

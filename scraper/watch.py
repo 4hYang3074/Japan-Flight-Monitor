@@ -1,4 +1,4 @@
-"""加扫时段：把 data/raw_watch.json 与当天早上例行扫描（docs/data.json）的同一组合比价，
+"""加扫时段：把 data/raw_watch.json 与最近一次例行扫描（docs/data.json）的同一组合比价，
 结果累积到 docs/watch.json；樱花期明显更便宜时写 data/alert.md 触发通知。"""
 import json
 from datetime import datetime, timedelta, timezone
@@ -56,7 +56,7 @@ def main():
                 continue
             alerted.add(key)
             alert_lines.append(
-                f"- **RM{r['p']:,}**（早上例行扫描是 RM{r['was']:,}，便宜 {-r['pct']}%）· {r['od'][5:].replace('-', '/')} 出发 "
+                f"- **RM{r['p']:,}**（上次例行扫描是 RM{r['was']:,}，便宜 {-r['pct']}%）· {r['od'][5:].replace('-', '/')} 出发 "
                 f"{r['n']}晚 · {r['o']['al']}（去 {r['o']['dep']}，回 {r['r']['dep']}）")
             entry_routes[-1].setdefault("alerted", []).append(list(key))
 
@@ -69,7 +69,7 @@ def main():
     alert = ROOT / "data" / "alert.md"
     alert.unlink(missing_ok=True)
     if alert_lines:
-        alert.write_text(f"{slot} 加扫 AirAsia X，发现比今天早上更便宜的樱花期机票（每人经济舱往返）：\n\n"
+        alert.write_text(f"{slot} 加扫 AirAsia X，发现比上次例行扫描更便宜的樱花期机票（每人经济舱往返）：\n\n"
                          + "\n".join(alert_lines[:15])
                          + "\n\n网页：https://4hyang3074.github.io/Japan-Flight-Monitor/\n\n"
                          "价格是扫描当时 Google Flights 的报价，订票时以航司结账页为准。\n", encoding="utf-8")

@@ -35,7 +35,7 @@ jobs:
           SCAN_ONLY: D7
         run: python scraper/scan.py
 
-      - name: Compare with this morning's scan
+      - name: Compare with the latest regular scan
         run: python scraper/watch.py
 
       - name: Commit

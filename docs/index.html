@@ -63,7 +63,17 @@ td.c-x{display:none}
 .cal{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px;display:none}
 .cal h3{font-size:14px;margin:0 0 8px;font-weight:600}
 .days{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:5px}
-.day{border-radius:7px;padding:5px 7px;font-size:12px;background:var(--mid-bg);line-height:1.3}
+.day{border-radius:7px;padding:5px 7px;font:inherit;font-size:12px;background:var(--mid-bg);color:inherit;line-height:1.3;text-align:left;border:2px solid transparent;cursor:pointer;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}
+.day:not(.none):hover,.day:not(.none):focus-visible{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.12);outline:none}
+.day.none{cursor:default}
+.day.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+#rows tr{scroll-margin-top:80px}
+#rows tr.picked{outline:2px solid var(--accent);outline-offset:-2px}
+#rows tr.flash td{animation:flash 2.6s ease-out}
+@keyframes flash{0%,55%{background:var(--accent-bg)}100%{background:transparent}}
+.datechip{display:none;align-items:center;gap:6px;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:2px 4px 2px 10px;font-size:13px}
+.datechip button{border:0;background:var(--accent);color:#fff;border-radius:999px;width:20px;height:20px;cursor:pointer;line-height:1}
+@media (prefers-reduced-motion:reduce){.day{transition:none}.day:not(.none):hover{transform:none}#rows tr.flash td{animation:none;background:var(--accent-bg)}}
 .day b{display:block;font-size:13.5px;font-variant-numeric:tabular-nums}
 .day.g{background:var(--good-bg);color:var(--good)}.day.r{background:var(--bad-bg);color:var(--bad)}
 .day.none{opacity:.45}
@@ -85,13 +95,14 @@ td.c-x{display:none}
   body{font-size:14.5px}
   .tbl thead{display:none}
   .tbl table,.tbl tbody{display:block;width:100%}
-  .tbl tr{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:12px;border-bottom:1px solid var(--line)}
-  .tbl td{display:block;border:0;padding:0}
+  .tbl tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px 12px;padding:12px;border-bottom:1px solid var(--line)}
+  .tbl td{display:block;border:0;padding:0;min-width:0;overflow-wrap:anywhere}
+  .tbl .tm{white-space:normal}
   td.c-o::before,td.c-r::before{content:attr(data-l);display:block;color:var(--muted);font-size:11px}
   .c-d{order:1}.c-p{order:2;text-align:right}.c-o{order:3}.c-r{order:4}
   td.c-x{order:5;grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12.5px}
-  .c-n,.c-rel,.c-bag,.c-sk,.c-sc{display:none}
-  #airlines tr{grid-template-columns:1fr 1fr 1fr}
+  .tbl td.c-n,.tbl td.c-rel,.tbl td.c-bag,.tbl td.c-sk,.tbl td.c-sc{display:none}
+  #airlines tr{grid-template-columns:repeat(3,minmax(0,1fr))}
   #airlines td:first-child{grid-column:1/-1}
   #airlines td[data-l]::before{content:attr(data-l);display:block;color:var(--muted);font-size:11px}
   .concl{grid-template-columns:1fr}
@@ -125,6 +136,7 @@ td.c-x{display:none}
     <label>航司 <select id="airline"><option value="">全部</option></select></label>
     <label>樱花 <select id="sakura"><option value="">全部</option><option>核心窗口</option><option>接近核心</option><option>较早</option><option>较晚</option></select></label>
     <label>出发 <input type="date" id="from"> – <input type="date" id="to"></label>
+    <span class="datechip" id="datechip"></span>
     <span class="count" id="count"></span>
   </div>
   <div class="tbl"><table>
@@ -140,7 +152,7 @@ td.c-x{display:none}
   <div class="concl" id="concl"></div>
   <div class="rule" id="rule"></div>
 
-  <h2 class="sec">④ AirAsia X 加扫时段观察 <small>周二 15:15、周三 18:15、周五 22:15 额外扫描，跟当天早上的价格比较</small></h2>
+  <h2 class="sec">④ AirAsia X 加扫时段观察 <small>周二 15:15、周三 18:15、周五 22:15 额外扫描，跟最近一次例行扫描比较</small></h2>
   <div class="card" id="watch">还没有加扫记录，第一次加扫后显示。</div>
 
   <div class="foot" id="foot"></div>
@@ -280,11 +292,36 @@ function renderCal() {
     const p = a.daily[d];
     const rel = p == null ? null : (p - a.avg) / a.avg * 100;
     const cls = p == null ? "none" : Math.abs(rel) <= 3 ? "" : rel < 0 ? "g" : "r";
-    html += `<div class="day ${cls}${p === a.min ? " best" : ""}">${fmtD(d)}(${wk(d)})<b>${p == null ? "—" : rm(p)}</b></div>`;
+    const picked = $("from").value === d && $("to").value === d;
+    html += p == null
+      ? `<div class="day none">${fmtD(d)}(${wk(d)})<b>—</b></div>`
+      : `<button type="button" class="day ${cls}${p === a.min ? " best" : ""}${picked ? " sel" : ""}" data-d="${d}" title="查看 ${fmtD(d)} 出发最便宜的航班组合">${fmtD(d)}(${wk(d)})<b>${rm(p)}</b></button>`;
     d = addDays(d, 1);
   }
-  $("cal").innerHTML = `<h3>${esc(a.name)} · 每个出发日期的最低往返价（${D.core_nights.join("/")}晚）<span class="sub"> 绿=低于该航司平均 · 红=高于 · 框=最便宜</span></h3><div class="days">${html}</div>`;
+  $("cal").innerHTML = `<h3>${esc(a.name)} · 每个出发日期的最低往返价（${D.core_nights.join("/")}晚）<span class="sub"> 绿=低于该航司平均 · 红=高于 · 框=最便宜 · 点日期看该班次详情</span></h3><div class="days">${html}</div>`;
   $("cal").style.display = "block";
+}
+function renderDateChip() {
+  const f = $("from").value, t = $("to").value, chip = $("datechip");
+  if (f && f === t) {
+    chip.innerHTML = `只看 ${fmtD(f)}(${wk(f)}) 出发 <button type="button" aria-label="清除日期筛选">✕</button>`;
+    chip.style.display = "inline-flex";
+  } else chip.style.display = "none";
+}
+function jumpToDay(d) {
+  const a = route.airlines.find(x => x.name === $("airline").value);
+  $("from").value = $("to").value = d;
+  D.core_nights.forEach(n => nightsOn.add(n));
+  document.querySelectorAll("#nights .chip").forEach(c => c.classList.toggle("on", nightsOn.has(+c.dataset.n)));
+  sortKey = "p"; sortDir = 1;
+  reset(); renderCal();
+  const rows = filtered();
+  const i = Math.max(0, rows.findIndex(r => r.p === a.daily[d] && r.dates.includes(d)));
+  const tr = $("rows").children[i];
+  if (!tr) return;
+  tr.classList.add("picked", "flash");
+  tr.addEventListener("animationend", () => tr.classList.remove("flash"), { once: true });
+  tr.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
 }
 function selectRoute(i) {
   route = D.routes[i];
@@ -301,7 +338,7 @@ function filtered() {
   const al = $("airline").value, sk = $("sakura").value, dir = $("direct").checked, f = $("from").value, t = $("to").value;
   const rows = route.rows.filter(r =>
     nightsOn.has(r.n) && (!dir || r.direct) && (!al || r.ak === al) &&
-    (!sk || r.sks.includes(sk)) && (!f || r.dates[r.dates.length - 1] >= f) && (!t || r.dates[0] <= t));
+    (!sk || r.sks.includes(sk)) && (!f && !t || r.dates.some(x => (!f || x >= f) && (!t || x <= t))));
   const val = {
     p: r => r.p, od: r => r.od, n: r => r.n, oal: r => r.o.al + r.o.dep, ral: r => r.r.al + r.r.dep,
     sc: r => -(r.sc ? r.sc[0] : 0), sk: r => ["核心窗口", "接近核心", "较早", "较晚"].indexOf(r.sks[0]),
@@ -328,11 +365,18 @@ function renderRows() {
       <td class="c-x">${scoreBadge(r.sc)}<b>${r.n}晚</b>${relBadge(r)}<span>${esc(r.bag)}</span>${sk}</td></tr>`;
   }).join("");
   $("more").style.display = rows.length > shown ? "block" : "none";
+  renderDateChip();
   document.querySelectorAll("#main-head th").forEach(th => th.classList.toggle("sorted", th.dataset.s === sortKey));
 }
 
 $("more").onclick = () => { shown += PAGE * 2; renderRows(); };
-["sakura", "direct", "from", "to"].forEach(id => $(id).onchange = reset);
+["sakura", "direct"].forEach(id => $(id).onchange = reset);
+["from", "to"].forEach(id => $(id).onchange = () => { reset(); renderCal(); });
+$("cal").onclick = e => { const b = e.target.closest("button.day"); if (b) jumpToDay(b.dataset.d); };
+$("datechip").onclick = e => {
+  if (!e.target.closest("button")) return;
+  $("from").value = $("to").value = ""; reset(); renderCal();
+};
 $("airline").onchange = () => { renderAirlines(); reset(); };
 $("airlines").onclick = e => {
   const tr = e.target.closest("tr"); if (!tr) return;
@@ -353,7 +397,7 @@ function renderWatch(list) {
   const summary = Object.entries(groups).map(([slot, rs]) => {
     const avg = rs.reduce((s, r) => s + r.avg_diff_pct, 0) / rs.length;
     const hits = rs.filter(r => r.best_drop).length;
-    return `<li><b>${slot}时</b>：${rs.length} 次，平均比早上 ${pct(Math.round(avg * 10) / 10)}，其中 ${hits} 次出现便宜 5% 以上的组合</li>`;
+    return `<li><b>${slot}时</b>：${rs.length} 次，平均比例行扫描 ${pct(Math.round(avg * 10) / 10)}，其中 ${hits} 次出现便宜 5% 以上的组合</li>`;
   }).join("");
   const recent = runs.slice(-10).reverse().map(r => `<tr>
       <td>${myt(r.at)}<div class="sub">${esc(r.slot)}</div></td>
@@ -361,16 +405,19 @@ function renderWatch(list) {
       <td>${r.cheaper} 个更便宜 / ${r.pricier} 个更贵<div class="sub">共比较 ${r.compared} 个组合</div></td>
       <td>${pct(r.avg_diff_pct)}</td>
       <td>${r.best_drop ? `<span class="drop">${rm(r.best_drop.was)} → ${rm(r.best_drop.p)}（${r.best_drop.pct}%）</span><div class="sub">${fmtD(r.best_drop.od)} 出发 ${r.best_drop.n}晚</div>` : `<span class="sub">无</span>`}</td></tr>`).join("");
-  $("watch").innerHTML = `<b>各时段累计结果</b>（负数＝比当天早上便宜）<ul>${summary}</ul>
-    <div class="tbl" style="margin-top:8px"><table><thead><tr><th>加扫时间</th><th>当次最便宜</th><th>跟早上同一组合比</th><th>平均差</th><th>最大降幅</th></tr></thead><tbody>${recent}</tbody></table></div>
+  $("watch").innerHTML = `<b>各时段累计结果</b>（负数＝比最近一次例行扫描便宜）<ul>${summary}</ul>
+    <div class="tbl" style="margin-top:8px"><table><thead><tr><th>加扫时间</th><th>当次最便宜</th><th>跟例行扫描同一组合比</th><th>平均差</th><th>最大降幅</th></tr></thead><tbody>${recent}</tbody></table></div>
     <div class="hint">只比较 KUL↔KIX AirAsia X 直飞 ${D.core_nights.join("/")} 晚的同一组合（同日期、同航班）。累积几周后就能看出这些时段是不是真的比较便宜。</div>`;
 }
 
 function renderPromos(s) {
   if (!s || !s.current) return;
-  const rel = s.current.filter(p => p.relevant);
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Kuala_Lumpur" });
+  // 过了订票截止日的促销不显示（即使后台还没来得及重新检查）
+  const rel = s.current.filter(p => p.relevant && !p.expired && !(p.deadline && p.deadline < today));
   const link = u => /^https:\/\//.test(u) ? ` <a href="${esc(u)}" target="_blank" rel="noopener">查看</a>` : "";
-  const items = rel.length ? rel.map(p => `<li><b>${esc(p.title)}</b>${p.detail ? ` — ${esc(p.detail)}` : ""}${link(p.url)}</li>`).join("")
+  const due = p => p.deadline ? ` <span class="rise">订票截止 ${fmtD(p.deadline)}</span>` : "";
+  const items = rel.length ? rel.map(p => `<li><b>${esc(p.title)}</b>${due(p)}${p.detail ? ` — ${esc(p.detail)}` : ""}${link(p.url)}</li>`).join("")
     : `<li class="sub">目前没有跟这趟行程相关的 AirAsia 机票促销</li>`;
   $("promos").innerHTML = `<div class="card" style="margin-top:14px"><b>AirAsia 促销监控</b>
     <span class="sub">每 30 分钟检查官网促销页与官方新闻室 · 内容最近变化于 ${myt(s.updated_at)}</span>
