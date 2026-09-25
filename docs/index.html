@@ -93,6 +93,9 @@ td.c-x{display:none}
 #rows tr.picked{outline:2px solid var(--accent);outline-offset:-2px}
 #rows tr.flash td{animation:flash 2.6s ease-out}
 @keyframes flash{0%,55%{background:var(--accent-bg)}100%{background:transparent}}
+.gf-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.btn.gf{padding:5px 12px;font-size:13px}
+.c-p .gf-row{justify-content:flex-start}
 .promos{list-style:none;margin:8px 0 0;padding:0}
 .promos li.promo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)}
 .promos li.promo .btn{margin-left:auto}
@@ -126,6 +129,7 @@ td.c-x{display:none}
   .tbl tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px 12px;padding:12px;border-bottom:1px solid var(--line)}
   .tbl td{display:block;border:0;padding:0;min-width:0;overflow-wrap:anywhere}
   .tbl .tm{white-space:normal}
+  .c-p .gf-row{justify-content:flex-end}
   td.c-o::before,td.c-r::before{content:attr(data-l);display:block;color:var(--muted);font-size:11px}
   .c-d{order:1}.c-p{order:2;text-align:right}.c-o{order:3}.c-r{order:4}
   td.c-x{order:5;grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12.5px}
@@ -179,7 +183,7 @@ td.c-x{display:none}
 
   <h2 class="sec">① 各航空公司价格 <small>每家航司单独计算 · 点一行看每日价格日历</small></h2>
   <div class="tbl"><table>
-    <thead><tr><th>航空公司</th><th>今日最低</th><th>今日平均</th><th>今日最高</th><th>历史最低</th><th>历史平均</th><th>现在买？</th></tr></thead>
+    <thead><tr><th>航空公司</th><th>今日最低</th><th>今日平均</th><th>今日最高</th><th>历史最低</th><th>历史平均</th><th>现在买？</th><th>最低价航班</th></tr></thead>
     <tbody id="airlines"></tbody>
   </table></div>
   <div class="hint" id="cov"></div>
@@ -321,6 +325,10 @@ function renderConclusion() {
     目前累计 ${scans} 次扫描${scans < 3 ? "，历史数据还少，分数和“现在买吗”会随着天数增加越来越准" : ""}。`;
 }
 
+function lowLinks(a) {
+  const r = route.rows.find(x => x.ak === a.name && x.p === a.min && x.n === a.low.n && x.dates.includes(a.low.od) && x.o.dep === a.low.dep);
+  return r ? flightLinks({ ...r, od: a.low.od }) : "";
+}
 function renderAirlines() {
   const cur = $("airline").value;
   $("airlines").innerHTML = (route.airlines || []).map(a => `<tr data-a="${esc(a.name)}" class="${a.name === cur ? "on" : ""}">
@@ -330,7 +338,8 @@ function renderAirlines() {
     <td data-l="今日最高"><div class="price">${rm(a.max)}</div><div class="sub">${fmtD(a.high.od)} 出发</div></td>
     <td data-l="历史最低"><b>${rm(a.all.min)}</b><div class="sub">${fmtD(a.all.min_seen)} 查到</div></td>
     <td data-l="历史平均"><b>${rm(a.all.avg)}</b><div class="sub">${a.all.scans} 次扫描</div></td>
-    <td data-l="现在买？"><span class="sub">${esc(a.verdict || "下次扫描后显示")}</span></td></tr>`).join("");
+    <td data-l="现在买？"><span class="sub">${esc(a.verdict || "下次扫描后显示")}</span></td>
+    <td data-l="最低价航班"><div class="gf-row">${lowLinks(a)}</div></td></tr>`).join("");
   $("cov").innerHTML = "直飞查询覆盖（去程+回程查询天数）：" + Object.values(route.coverage).map(c => {
     if (!c.found) return `<span class="rise">${esc(c.airline)} 未返回航班</span>`;
     const pr = c.priced ?? c.found;
@@ -413,7 +422,7 @@ function renderRows() {
       <td class="c-n">${r.n}晚</td>
       <td class="c-o" data-l="去程">${leg(r.o)}</td>
       <td class="c-r" data-l="回程">${leg(r.r)}</td>
-      <td class="c-p"><div class="price">${rm(r.p)}</div><div class="sub">${r.pt} · 抓取 ${myt(r.f)}</div>${chg(r)}</td>
+      <td class="c-p"><div class="price">${rm(r.p)}</div><div class="sub">${r.pt} · 抓取 ${myt(r.f)}</div>${chg(r)}<div class="gf-row">${flightLinks(r)}</div></td>
       <td class="c-sc">${scoreBadge(r.sc)}</td>
       <td class="c-rel">${relBadge(r)}</td>
       <td class="c-bag">${esc(r.bag)}</td>
@@ -435,6 +444,7 @@ $("datechip").onclick = e => {
 };
 $("airline").onchange = () => { renderAirlines(); reset(); };
 $("airlines").onclick = e => {
+  if (e.target.closest("a")) return;
   const tr = e.target.closest("tr"); if (!tr) return;
   $("airline").value = $("airline").value === tr.dataset.a ? "" : tr.dataset.a;
   renderAirlines(); reset();
@@ -479,6 +489,34 @@ function renderPromos(s) {
     <span class="sub">每 30 分钟检查官网促销页与官方新闻室 · 内容最近变化于 ${myt(s.updated_at)}</span>
     <ul class="promos">${items}</ul>
     ${s.errors && s.errors.length ? `<div class="sub rise">部分来源读取失败：${esc(s.errors.join("；"))}</div>` : ""}</div>`;
+}
+
+// ---- Google Flights 精确链接：与扫描用的 tfs 编码相同（protobuf → base64） ----
+const pv = n => { const b = []; while (n > 127) { b.push((n & 127) | 128); n >>>= 7; } b.push(n); return b; };
+const pk = (f, t) => pv((f << 3) | t);
+const pLen = (f, bytes) => [...pk(f, 2), ...pv(bytes.length), ...bytes];
+const pStr = (f, s) => pLen(f, [...new TextEncoder().encode(s)]);
+const pInt = (f, n) => [...pk(f, 0), ...pv(n)];
+function pbLeg(date, from, to, code, stops, hour) {
+  const b = [...pStr(2, date)];
+  if (stops != null) b.push(...pInt(5, stops));
+  if (code && code !== "multi") b.push(...pStr(6, code));
+  if (hour != null) b.push(...pInt(8, hour), ...pInt(9, hour));
+  b.push(...pLen(13, pStr(2, from)), ...pLen(14, pStr(2, to)));
+  return b;
+}
+function gfUrl(legs, roundTrip) {
+  const bytes = [...legs.flatMap(l => pLen(3, pbLeg(...l))), ...pLen(8, [1]), ...pInt(9, 1), ...pInt(19, roundTrip ? 1 : 2)];
+  const tfs = btoa(String.fromCharCode(...bytes));
+  return `https://www.google.com/travel/flights/search?tfs=${encodeURIComponent(tfs)}&hl=zh-CN&curr=MYR`;
+}
+function legSpec(l, date, from, to) { return [date, from, to, l.c, l.via.length, +l.dep.slice(0, 2)]; }
+function flightLinks(r) {
+  const [o, k] = route.id.split("-");
+  const out = legSpec(r.o, r.od, o, k), back = legSpec(r.r, addDays(r.od, r.n), k, o);
+  const btn = (href, label) => `<a class="btn gf" href="${esc(href)}" target="_blank" rel="noopener" title="在 Google Flights 打开这组航班">${label} <span aria-hidden="true">↗</span></a>`;
+  return r.pt === "往返票" ? btn(gfUrl([out, back], true), "查看航班")
+    : `${btn(gfUrl([out], false), "去程")}${btn(gfUrl([back], false), "回程")}`;
 }
 
 // ---- 立即更新：用保存在本机的 token 触发 GitHub Actions ----
