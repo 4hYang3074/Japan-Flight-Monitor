@@ -327,7 +327,7 @@ function renderTop() {
 
   renderConclusion();
   $("foot").innerHTML = `价格来源：Google Flights 实时报价（经济舱最低票价档），每个价格都是当天那次查询实际返回的数字，未做任何推算；订票时以航司结账页为准。
-    “往返票”=同航司指定去回程的往返票价；“单程×2”=两张单程票价相加。时间均为当地时间。
+    “往返票”=同航司指定去回程的往返票价（全服务航司通常比两张单程便宜很多）；“单程×2”=两张单程票价相加，廉航直接买来回票也是同样价格，可用“查看来回”一次订完。时间均为当地时间。
     樱花参考：大阪满开 ${fmtD(D.sakura.full_bloom)}（${esc(D.sakura.source)}）。转机航班只收录 Google 返回的每日最便宜 3 个、总时长 18 小时内的一次转机选项。`;
 }
 
@@ -567,7 +567,8 @@ function flightLinks(r) {
   const [o, k] = (r.rid || route.id).split("-");
   const out = legSpec(r.o, r.od, o, k), back = legSpec(r.r, addDays(r.od, r.n), k, o);
   const btn = (href, label) => `<a class="btn gf" href="${esc(href)}" target="_blank" rel="noopener" title="在 Google Flights 打开这组航班">${label} <span aria-hidden="true">↗</span></a>`;
-  return r.pt === "往返票" ? btn(gfUrl([out, back], true), "查看航班")
+  // 同一家航司：一张来回票（廉航的来回价与两张单程相同，全服务航司来回更便宜）；不同航司只能分开买
+  return r.o.al === r.r.al ? btn(gfUrl([out, back], true), "查看来回")
     : `${btn(gfUrl([out], false), "去程")}${btn(gfUrl([back], false), "回程")}`;
 }
 
