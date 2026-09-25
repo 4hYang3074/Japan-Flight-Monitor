@@ -1,0 +1,62 @@
+name: AirAsia promo watch
+
+on:
+  schedule:
+    - cron: "43 */3 * * *"   # 每 3 小时检查一次 AirAsia 官网促销页与官方新闻室
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: promo-watch
+  cancel-in-progress: false
+
+jobs:
+  promo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Check AirAsia promotions
+        id: promo
+        run: python scraper/promo.py
+
+      - name: New promo → scan AirAsia X fares now
+        if: steps.promo.outputs.new == 'true'
+        env:
+          SCAN_ONLY: D7
+        run: |
+          python scraper/scan.py
+          python scraper/watch.py
+          python scraper/promo.py report
+
+      - name: Commit
+        run: |
+          git config user.name "flight-monitor-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/promos.json
+          [ -f docs/watch.json ] && git add docs/watch.json
+          git diff --cached --quiet && exit 0
+          git commit -m "AirAsia promo check $(TZ=Asia/Kuala_Lumpur date '+%F %H:%M')"
+          for i in 1 2 3; do git pull --rebase origin main && git push && exit 0; sleep 10; done
+          exit 1
+
+      - name: Notify new promo
+        if: steps.promo.outputs.new == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "AirAsia 新促销 + 最新票价 $(TZ=Asia/Kuala_Lumpur date '+%-m/%-d %H:%M')" \
+            --body-file data/promo_alert.md \
+            --assignee "$GITHUB_REPOSITORY_OWNER"

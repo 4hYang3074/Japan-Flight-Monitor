@@ -106,6 +106,7 @@ td.c-x{display:none}
   <a class="jump" href="#conclusion">直接看结论与推荐 ↓</a>
   <div class="quick" id="quick"></div>
   <div id="deals"></div>
+  <div id="promos"></div>
 
   <div class="tabs" id="tabs"></div>
 
@@ -365,10 +366,24 @@ function renderWatch(list) {
     <div class="hint">只比较 KUL↔KIX AirAsia X 直飞 ${D.core_nights.join("/")} 晚的同一组合（同日期、同航班）。累积几周后就能看出这些时段是不是真的比较便宜。</div>`;
 }
 
+function renderPromos(s) {
+  if (!s || !s.current) return;
+  const rel = s.current.filter(p => p.relevant);
+  const link = u => /^https:\/\//.test(u) ? ` <a href="${esc(u)}" target="_blank" rel="noopener">查看</a>` : "";
+  const items = rel.length ? rel.map(p => `<li><b>${esc(p.title)}</b>${p.detail ? ` — ${esc(p.detail)}` : ""}${link(p.url)}</li>`).join("")
+    : `<li class="sub">目前没有跟这趟行程相关的 AirAsia 机票促销</li>`;
+  $("promos").innerHTML = `<div class="card" style="margin-top:14px"><b>AirAsia 促销监控</b>
+    <span class="sub">每 3 小时检查官网促销页与官方新闻室 · 内容最近变化于 ${myt(s.updated_at)}</span>
+    <ul style="margin:6px 0 0;padding-left:20px">${items}</ul>
+    ${s.errors && s.errors.length ? `<div class="sub rise">部分来源读取失败：${esc(s.errors.join("；"))}</div>` : ""}</div>`;
+}
+
 const watchReq = fetch("watch.json", { cache: "no-store" }).then(r => r.ok ? r.json() : []).catch(() => []);
+const promoReq = fetch("promos.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null);
 fetch("data.json", { cache: "no-store" }).then(r => r.json()).then(async d => {
   D = d; renderTop(); selectRoute(0);
   renderWatch(await watchReq);
+  renderPromos(await promoReq);
 }).catch(() => { $("status").textContent = "数据载入失败，请稍后刷新（第一次扫描完成前没有数据）。"; });
 </script>
 </body>
