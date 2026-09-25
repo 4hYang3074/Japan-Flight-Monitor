@@ -373,7 +373,7 @@ function renderPromos(s) {
   const items = rel.length ? rel.map(p => `<li><b>${esc(p.title)}</b>${p.detail ? ` — ${esc(p.detail)}` : ""}${link(p.url)}</li>`).join("")
     : `<li class="sub">目前没有跟这趟行程相关的 AirAsia 机票促销</li>`;
   $("promos").innerHTML = `<div class="card" style="margin-top:14px"><b>AirAsia 促销监控</b>
-    <span class="sub">每 3 小时检查官网促销页与官方新闻室 · 内容最近变化于 ${myt(s.updated_at)}</span>
+    <span class="sub">每 30 分钟检查官网促销页与官方新闻室 · 内容最近变化于 ${myt(s.updated_at)}</span>
     <ul style="margin:6px 0 0;padding-left:20px">${items}</ul>
     ${s.errors && s.errors.length ? `<div class="sub rise">部分来源读取失败：${esc(s.errors.join("；"))}</div>` : ""}</div>`;
 }

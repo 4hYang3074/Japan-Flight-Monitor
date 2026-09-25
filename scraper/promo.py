@@ -118,7 +118,7 @@ def check():
     before = {k: v for k, v in state.items() if k != "updated_at"}
     state.update({"errors": errors,
                   "current": sorted(current.values(), key=lambda p: (not p["relevant"], p["title"]))})
-    # 只在促销内容有变化时才写文件，避免每 3 小时产生无意义的提交
+    # 只在促销内容有变化时才写文件，避免每次检查都产生无意义的提交
     if first_run or {k: v for k, v in state.items() if k != "updated_at"} != before:
         state["updated_at"] = now
         state_file.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")

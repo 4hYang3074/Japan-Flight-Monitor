@@ -2,7 +2,7 @@ name: AirAsia promo watch
 
 on:
   schedule:
-    - cron: "43 */3 * * *"   # 每 3 小时检查一次 AirAsia 官网促销页与官方新闻室
+    - cron: "13,43 * * * *"   # 每 30 分钟检查一次 AirAsia 官网促销页与官方新闻室
   workflow_dispatch:
 
 permissions:
