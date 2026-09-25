@@ -522,7 +522,8 @@ function renderPromos(s) {
   $("promos").innerHTML = `<div class="card" style="margin-top:14px"><b>AirAsia 促销监控</b>
     <span class="sub">每 30 分钟检查官网促销页与官方新闻室 · 内容最近变化于 ${myt(s.updated_at)}</span>
     <ul class="promos">${items}</ul>
-    ${s.errors && s.errors.length ? `<div class="sub rise">部分来源读取失败：${esc(s.errors.join("；"))}</div>` : ""}</div>`;
+    ${s.errors && s.errors.length ? `<div class="sub rise">部分来源读取失败：${esc(s.errors.join("；"))}</div>` : ""}
+    ${s.notes && s.notes.length ? `<div class="sub" style="margin-top:6px">注：GitHub 服务器在美国，AirAsia 官网只对马来西亚 IP 显示马来西亚促销，所以官网部分沿用最近一次在马来西亚读到的结果；官方新闻室不受影响。</div>` : ""}</div>`;
 }
 
 // ---- Google Flights 精确链接：与扫描用的 tfs 编码相同（protobuf → base64） ----

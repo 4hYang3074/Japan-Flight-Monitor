@@ -17,6 +17,46 @@
  "current": [
   {
    "source": "AirAsia 官网促销页",
+   "title": "Up to 27% OFF All Flights",
+   "detail": "Book by 27 Sep 2026 on AirAsia MOVE App",
+   "url": "https://www.airasia.com/en/gb/promotions",
+   "deadline": "2026-09-27",
+   "expired": false,
+   "id": "a121667c0f6b",
+   "relevant": true
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "Airport rides from RM50 only",
+   "detail": "Book from 2 hours to 7 days ahead to secure your ride, plus save RM9 on your trip!",
+   "url": "https://www.airasia.com/ride",
+   "deadline": null,
+   "expired": false,
+   "id": "a3630501da2d",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "Fly to China from MYR 580",
+   "detail": "🇨🇳 Book now with code FLYCHINA to save extra MYR 200 👉",
+   "url": "https://www.airasia.com/campaigns/flybeyond-china/en/my/",
+   "deadline": null,
+   "expired": false,
+   "id": "e4358a1b29af",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "Get MOVETIX Event🎫 + Flight✈️",
+   "detail": "Tickets from MYR 1,300. Save up to 20% when you bundle it. Better value, more partying. T&C apply.",
+   "url": "https://www.airasia.com/movetix/en-gb/event/dwp/dwp-2026-jakarta-bundle-1/?departureAirport=KUL",
+   "deadline": null,
+   "expired": false,
+   "id": "e5921b6b0819",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
    "title": "Get the latest airasia.com promos!",
    "detail": "",
    "url": "https://www.airasia.com/en/gb/promotions",
@@ -27,14 +67,55 @@
   },
   {
    "source": "AirAsia 官网促销页",
-   "title": "Notices and promotions",
+   "title": "Promotions & Notices",
    "detail": "",
    "url": "https://www.airasia.com/en/gb/promotions",
    "deadline": null,
    "expired": false,
-   "id": "e7c8c09db69d",
+   "id": "446e374a606e",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "See the colours of autumn at Beijing, Osaka, Seoul and More!",
+   "detail": "Get an extra MYR 200 OFF your trip now by applying code [AUTUMNSNAP] at check out.",
+   "url": "https://www.airasia.com/hotels/en/gb",
+   "deadline": null,
+   "expired": false,
+   "id": "0eb2ba55d114",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "Zoom into RM2 OFF x 2 rides…",
+   "detail": "to/from your nearest LRT station! Elevate your daily hustle in collab with Pulse by Prasarana Malaysia",
+   "url": "https://www.airasia.com/aa/pulseapp/",
+   "deadline": null,
+   "expired": false,
+   "id": "260050e5200f",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "大促预告横幅（代码 MOVE_MEGASALE-Teaser_141024_my_en）",
+   "detail": "",
+   "url": "https://www.airasia.com/flight/en/gb",
+   "deadline": null,
+   "expired": true,
+   "id": "7500894e9e40",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "官网横幅（代码 FH_COMBODEAL_190926_my_en）",
+   "detail": "",
+   "url": "https://www.airasia.com/snap/en/gb",
+   "deadline": null,
+   "expired": false,
+   "id": "c0a5b54b2a73",
    "relevant": false
   }
  ],
- "updated_at": "2026-09-25T04:35:03+00:00"
+ "updated_at": "2026-09-25T04:54:27+00:00",
+ "notes": []
 }

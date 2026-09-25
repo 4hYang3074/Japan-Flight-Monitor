@@ -65,8 +65,16 @@ def pid(*parts):
     return hashlib.sha1("|".join(parts).encode()).hexdigest()[:12]
 
 
+class WrongMarket(Exception):
+    pass
+
+
 def from_promo_page():
     data = json.loads(LexborHTMLParser(get(PROMO_PAGE)).css_first("script#__NEXT_DATA__").text())
+    # AirAsia 按访问者 IP 决定国家版本；非马来西亚版本里没有马来西亚的促销
+    geo = data.get("props", {}).get("pageProps", {}).get("geoId")
+    if geo != "MY":
+        raise WrongMarket(f"官网促销页按 IP 显示了 {geo} 版本，读不到马来西亚促销，沿用上次马来西亚版结果")
     found = {}
 
     def walk(o):
@@ -127,15 +135,22 @@ def check():
     first_run = not state_file.exists()
     state = load(state_file, {"seen": {}, "new_history": []})
     current, errors = {}, []
+    notes = []
     for name, fn in [("官网促销页", from_promo_page)] + [(u, lambda u=u: from_rss(u)) for u in RSS_FEEDS]:
         try:
             current.update(fn())
+        except WrongMarket as e:
+            notes.append(str(e))
+            for p in state.get("current", []):
+                if p["source"] == "AirAsia 官网促销页":
+                    current[p["id"]] = {k: v for k, v in p.items() if k not in ("id", "relevant", "expired", "deadline")} | {
+                        "deadline_text": f"book by {date.fromisoformat(p['deadline']):%d %b %Y}" if p.get("deadline") else ""}
         except Exception as e:
             errors.append(f"{name}: {type(e).__name__}: {e}")
     today = datetime.now(timezone(timedelta(hours=8))).date()
     for k, p in current.items():
         dl = deadline(p.pop("deadline_text", ""))
-        bd = banner_date(p.pop("banner", "") or "")
+        bd = banner_date(p.pop("banner", "") or p["title"])
         p["deadline"] = dl.isoformat() if dl else None
         # 已过订票截止日，或横幅代码显示是很久以前的活动，都不算有用信息
         p["expired"] = bool((dl and dl < today) or (bd and (today - bd).days > STALE_BANNER_DAYS))
@@ -150,7 +165,7 @@ def check():
         NEW_FILE.parent.mkdir(exist_ok=True)
         NEW_FILE.write_text(json.dumps(new, ensure_ascii=False, indent=1), encoding="utf-8")
     before = {k: v for k, v in state.items() if k != "updated_at"}
-    state.update({"errors": errors,
+    state.update({"errors": errors, "notes": notes,
                   "current": sorted(current.values(), key=lambda p: (not p["relevant"], p["title"]))})
     # 只在促销内容有变化时才写文件，避免每次检查都产生无意义的提交
     if first_run or {k: v for k, v in state.items() if k != "updated_at"} != before:
