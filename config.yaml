@@ -19,6 +19,12 @@ core_nights: [6, 7, 8]
 max_connections_per_day: 3
 max_connection_hours: 18
 
+# 划算提醒：比该航司历史平均低多少 % 才算划算；也可以给每条航线设目标价（每人往返 MYR，null=不设）
+deal_pct: 15
+alert_below:
+  KUL-KIX: null
+  SIN-KIX: null
+
 routes:
   - id: KUL-KIX
     name: 吉隆坡 KUL ↔ 大阪 KIX

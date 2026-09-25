@@ -6,7 +6,9 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import yaml
-from fast_flights import FlightQuery, create_query, get_flights
+from fast_flights import FlightQuery, create_query, fetch_flights_html
+from fast_flights.parser import _parse_time
+from selectolax.lexbor import LexborHTMLParser
 
 ROOT = Path(__file__).resolve().parent.parent
 SLEEP = 1.5
@@ -38,38 +40,57 @@ def fetch(frm, to, d, currency, airlines=None, max_stops=None):
     return run(q)
 
 
+def parse(html):
+    """解析 Google Flights 结果。与 fast-flights 自带解析器不同：Google 没给价格的航班也保留（price=None），
+    真的没有航班返回 []，页面结构异常才抛错（由 run() 重试）。"""
+    script = LexborHTMLParser(html).css_first(r"script.ds\:1")
+    if script is None:
+        raise ValueError("结果页缺少数据块")
+    data = script.text().split("data:", 1)[1].rsplit(",", 1)[0]
+    if data.endswith("errorHasStatus: true"):
+        return []
+    payload = json.loads(data)
+    if not payload[3] or payload[3][0] is None:
+        return []
+    out = []
+    for k in payload[3][0]:
+        fl = k[0]
+        price = k[1][0][1] if k[1] and k[1][0] else None
+        legs = [{"from": s[3], "to": s[6],
+                 "dep": datetime(*s[20], *_parse_time(s[8])),
+                 "arr": datetime(*s[21], *_parse_time(s[10]))} for s in fl[2]]
+        out.append({"code": fl[0], "airlines": fl[1], "legs": legs, "price": price})
+    return out
+
+
 def run(q):
-    """返回 (flights, error)。Google 没有结果时解析器会抛异常，视为空结果。"""
+    """返回 (flights, error)。查询或解析失败会重试，重试完仍失败才记为错误。"""
     last = None
     for attempt in range(RETRIES):
         try:
-            return list(get_flights(q)), None
-        except (IndexError, TypeError, KeyError):
-            return [], None
-        except Exception as e:  # 网络/被限流
+            return parse(fetch_flights_html(q)), None
+        except Exception as e:
             last = f"{type(e).__name__}: {e}"
             time.sleep(5 * (attempt + 1))
     return [], last
 
 
 def to_record(f, utc_off, fetched_at, source):
-    legs = f.flights
-    d, a = legs[0].departure, legs[-1].arrival
-    dep = datetime(*d.date, *d.time)
-    arr = datetime(*a.date, *a.time)
-    o, t = legs[0].from_airport.code, legs[-1].to_airport.code
+    legs = f["legs"]
+    dep, arr = legs[0]["dep"], legs[-1]["arr"]
+    o, t = legs[0]["from"], legs[-1]["to"]
     minutes = int(((arr - timedelta(hours=utc_off[t])) - (dep - timedelta(hours=utc_off[o]))).total_seconds() // 60)
     return {
-        "airline": " / ".join(f.airlines),
-        "code": f.type,
+        "airline": " / ".join(f["airlines"]),
+        "code": f["code"],
         "from": o,
         "to": t,
         "dep": dep.strftime("%Y-%m-%d %H:%M"),
         "arr": arr.strftime("%Y-%m-%d %H:%M"),
         "stops": len(legs) - 1,
-        "via": [l.to_airport.code for l in legs[:-1]],
+        "via": [l["to"] for l in legs[:-1]],
         "minutes": minutes,
-        "price": f.price,
+        "price": f["price"],
         "fetched_at": fetched_at,
         "source": source,
     }
@@ -113,13 +134,12 @@ def scan_roundtrips(route, cfg, outbound, inbound, start, end, errors):
                     if err:
                         errors.append(f"RT {code} {d}->{rd} {h}h: {err}")
                     for f in flights:
-                        if len(f.flights) != 1:
+                        if len(f["legs"]) != 1 or f["price"] is None:
                             continue
-                        t = f.flights[0].departure.time
-                        dep = out_times.get(f"{t[0]:02}:{t[1]:02}")
+                        dep = out_times.get(f["legs"][0]["dep"].strftime("%H:%M"))
                         if dep:
                             results.append({"code": code, "out_dep": dep, "ret_dep": ret["dep"],
-                                            "price": f.price, "fetched_at": now})
+                                            "price": f["price"], "fetched_at": now})
                     time.sleep(SLEEP)
         print(f"{route['id']} roundtrip {code} done", flush=True)
     return results
@@ -132,8 +152,10 @@ def scan_day(frm, to, d, route, cfg, errors, coverage):
 
     def add(rec):
         key = (rec["code"], rec["dep"], rec["arr"], tuple(rec["via"]))
-        # 航司筛选查询得到的价格优先于综合查询
-        if key not in found or rec["source"] != "general":
+        old = found.get(key)
+        # 有价格的优先；都有价格时，航司筛选查询得到的价格优先于综合查询
+        if old is None or (old["price"] is None and rec["price"] is not None) or \
+                (rec["price"] is not None and rec["source"] != "general"):
             found[key] = rec
 
     for code, name in route["direct_airlines"].items():
@@ -141,9 +163,10 @@ def scan_day(frm, to, d, route, cfg, errors, coverage):
         now = datetime.now(timezone.utc).isoformat(timespec="seconds")
         if err:
             errors.append(f"{frm}->{to} {d} {code}: {err}")
-        recs = [to_record(f, utc, now, f"airline:{code}") for f in flights if len(f.flights) == 1]
+        recs = [to_record(f, utc, now, f"airline:{code}") for f in flights if len(f["legs"]) == 1]
         coverage.append({"route": route["id"], "from": frm, "date": d.isoformat(), "code": code,
-                         "airline": name, "count": len(recs), "error": bool(err)})
+                         "airline": name, "count": len(recs),
+                         "priced": sum(r["price"] is not None for r in recs), "error": bool(err)})
         for r in recs:
             add(r)
         time.sleep(SLEEP)
@@ -157,7 +180,7 @@ def scan_day(frm, to, d, route, cfg, errors, coverage):
         r = to_record(f, utc, now, "general")
         if r["stops"] == 0:
             add(r)
-        elif r["stops"] == 1 and r["minutes"] <= cfg["max_connection_hours"] * 60:
+        elif r["stops"] == 1 and r["price"] is not None and r["minutes"] <= cfg["max_connection_hours"] * 60:
             conns.append(r)
     for r in sorted(conns, key=lambda r: r["price"])[: cfg["max_connections_per_day"]]:
         add(r)

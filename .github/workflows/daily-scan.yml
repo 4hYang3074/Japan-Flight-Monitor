@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: daily-scan
@@ -46,4 +47,15 @@ jobs:
           git add docs/data.json docs/history.json
           git diff --cached --quiet && exit 0
           git commit -m "Daily scan $(TZ=Asia/Kuala_Lumpur date +%F)"
+          git pull --rebase origin main
           git push
+
+      - name: Notify good deals
+        if: hashFiles('data/alert.md') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "划算机票提醒 $(TZ=Asia/Kuala_Lumpur date +%-m/%-d)" \
+            --body-file data/alert.md \
+            --assignee "$GITHUB_REPOSITORY_OWNER"
