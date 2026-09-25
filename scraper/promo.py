@@ -1,21 +1,26 @@
 """AirAsia 促销监控：读取官网促销页与官方新闻室 RSS，发现与本行程相关的新促销时输出 data/promo_new.json。
-用法：python scraper/promo.py          检查促销，写 docs/promos.json
-      python scraper/promo.py report   有新促销时，结合加扫结果写 data/promo_alert.md"""
+用法：python scraper/promo.py            检查促销，写 docs/promos.json（只用标准库，本机定时任务无需安装套件）
+      python scraper/promo.py from-push  GitHub 收到本机推送后，找出本机发现的新促销
+      python scraper/promo.py report     有新促销时，结合加扫结果写 data/promo_alert.md"""
 import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
+from pathlib import Path
 
-from selectolax.lexbor import LexborHTMLParser
+ROOT = Path(__file__).resolve().parent.parent
+DOCS = ROOT / "docs"
+NEXT_DATA = re.compile(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.S)
 
-from build import DOCS, ROOT, combine, load, row_key
 
-import yaml
+def load(p, default=None):
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else default
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36"
 PROMO_PAGE = "https://www.airasia.com/en/gb/promotions"
@@ -70,7 +75,7 @@ class WrongMarket(Exception):
 
 
 def from_promo_page():
-    data = json.loads(LexborHTMLParser(get(PROMO_PAGE)).css_first("script#__NEXT_DATA__").text())
+    data = json.loads(NEXT_DATA.search(get(PROMO_PAGE)).group(1))
     # AirAsia 按访问者 IP 决定国家版本；非马来西亚版本里没有马来西亚的促销
     geo = data.get("props", {}).get("pageProps", {}).get("geoId")
     if geo != "MY":
@@ -173,13 +178,35 @@ def check():
         state_file.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
     has_new = bool(new) and not first_run
     print(f"promos: {len(current)} current, {len(new)} new relevant, first_run={first_run}, errors={errors}")
+    set_output(has_new)
+
+
+def set_output(has_new):
     if os.environ.get("GITHUB_OUTPUT"):
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
             f.write(f"new={'true' if has_new else 'false'}\n")
 
 
+def from_push():
+    """本机（马来西亚 IP）检查后推送 promos.json；比较推送前后的 new_history，找出本机发现的新促销。"""
+    try:
+        before = json.loads(subprocess.run(["git", "show", "HEAD~1:docs/promos.json"], cwd=ROOT,
+                                           capture_output=True, check=True).stdout.decode("utf-8"))
+    except (subprocess.CalledProcessError, json.JSONDecodeError):
+        before = {}
+    seen = {p["id"] for p in before.get("new_history", [])}
+    new = [p for p in load(DOCS / "promos.json", {}).get("new_history", []) if p["id"] not in seen]
+    if new:
+        NEW_FILE.parent.mkdir(exist_ok=True)
+        NEW_FILE.write_text(json.dumps(new, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"from push: {len(new)} new promos")
+    set_output(bool(new))
+
+
 def report():
     """写 Issue 内容：新促销 + 刚加扫的 AirAsia X 樱花期最便宜组合（与最近一次例行扫描比较）。"""
+    import yaml
+    from build import combine, row_key
     cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
     new = load(NEW_FILE, [])
     raw = load(ROOT / "data" / "raw_watch.json")
@@ -209,4 +236,4 @@ def report():
 
 
 if __name__ == "__main__":
-    report() if sys.argv[1:] == ["report"] else check()
+    {"report": report, "from-push": from_push}.get(sys.argv[1] if len(sys.argv) > 1 else "", check)()

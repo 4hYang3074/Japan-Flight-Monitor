@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: "13,43 * * * *"   # 每 30 分钟检查一次 AirAsia 官网促销页与官方新闻室
   workflow_dispatch:
+  # 本机定时任务（马来西亚 IP）检查官网后推送 promos.json；这里接手加扫与通知
+  push:
+    branches: [main]
+    paths: [docs/promos.json]
 
 permissions:
   contents: write
@@ -19,6 +23,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - uses: actions/setup-python@v5
         with:
@@ -29,7 +35,12 @@ jobs:
 
       - name: Check AirAsia promotions
         id: promo
-        run: python scraper/promo.py
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            python scraper/promo.py from-push
+          else
+            python scraper/promo.py
+          fi
 
       - name: New promo → scan AirAsia X fares now
         if: steps.promo.outputs.new == 'true'
