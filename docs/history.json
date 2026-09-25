@@ -130,5 +130,137 @@
 "median": 2129,
 "avg": 2186,
 "min_od": "2027-04-07"
+},
+{
+"date": "2026-09-26",
+"route": "KUL-KIX",
+"airline": "AirAsia X",
+"n": 32,
+"min": 1832,
+"max": 2884,
+"median": 1987,
+"avg": 2160,
+"min_od": "2027-04-13"
+},
+{
+"date": "2026-09-26",
+"route": "KUL-KIX",
+"airline": "混搭（去回不同航司）",
+"n": 32,
+"min": 1619,
+"max": 2807,
+"median": 2231,
+"avg": 2207,
+"min_od": "2027-04-20"
+},
+{
+"date": "2026-09-26",
+"route": "KUL-KIX",
+"airline": "Malaysia Airlines",
+"n": 32,
+"min": 4494,
+"max": 6692,
+"median": 5841,
+"avg": 5712,
+"min_od": "2027-04-16"
+},
+{
+"date": "2026-09-26",
+"route": "KUL-KIX",
+"airline": "AirAsia",
+"n": 6,
+"min": 2650,
+"max": 3397,
+"median": 2850,
+"avg": 2914,
+"min_od": "2027-03-20"
+},
+{
+"date": "2026-09-26",
+"route": "KUL-KIX",
+"airline": "Scoot",
+"n": 6,
+"min": 2349,
+"max": 3524,
+"median": 2648,
+"avg": 2746,
+"min_od": "2027-04-12"
+},
+{
+"date": "2026-09-26",
+"route": "KUL-KIX",
+"airline": "THAI",
+"n": 9,
+"min": 3675,
+"max": 4488,
+"median": 3681,
+"avg": 3964,
+"min_od": "2027-03-31"
+},
+{
+"date": "2026-09-26",
+"route": "KUL-KIX",
+"airline": "Korean Air",
+"n": 2,
+"min": 4557,
+"max": 4557,
+"median": 4557,
+"avg": 4557,
+"min_od": "2027-03-28"
+},
+{
+"date": "2026-09-26",
+"route": "SIN-KIX",
+"airline": "Singapore Airlines",
+"n": 32,
+"min": 2653,
+"max": 4190,
+"median": 3588,
+"avg": 3452,
+"min_od": "2027-04-14"
+},
+{
+"date": "2026-09-26",
+"route": "SIN-KIX",
+"airline": "混搭（去回不同航司）",
+"n": 32,
+"min": 1823,
+"max": 2654,
+"median": 2150,
+"avg": 2155,
+"min_od": "2027-04-13"
+},
+{
+"date": "2026-09-26",
+"route": "SIN-KIX",
+"airline": "Scoot",
+"n": 32,
+"min": 2013,
+"max": 3124,
+"median": 2297,
+"avg": 2462,
+"min_od": "2027-04-13"
+},
+{
+"date": "2026-09-26",
+"route": "SIN-KIX",
+"airline": "Peach Aviation",
+"n": 2,
+"min": 2595,
+"max": 3236,
+"median": 2916,
+"avg": 2916,
+"min_od": "2027-03-20"
+},
+{
+"date": "2026-09-26",
+"route": "SIN-KIX",
+"airline": "Cebu Pacific",
+"n": 13,
+"min": 1965,
+"max": 2532,
+"median": 2139,
+"avg": 2191,
+"min_od": "2027-04-15"
 }
 ]
