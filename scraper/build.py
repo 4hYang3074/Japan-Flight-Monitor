@@ -164,14 +164,23 @@ def score(r, airline, route_min):
 
 
 def find_deals(route, rows, by_ak, cfg):
-    """划算条件：落在樱花核心/接近核心，且 (创该航司历史新低 或 比历史平均低 ≥ deal_pct% 或 低于自设目标价)。"""
+    """值得购买（6/7/8 晚）：
+    - 直飞往返每人低于 buy_direct_below（扫描期间任何日期都算）；或
+    - 落在樱花核心/接近核心，且 创该航司历史新低 / 比历史平均低 ≥ deal_pct% / 低于自设目标价。"""
     target = (cfg.get("alert_below") or {}).get(route["id"])
+    direct_below = cfg.get("buy_direct_below")
     deals = []
     for r in rows:
-        if r["n"] not in cfg["core_nights"] or not {"核心窗口", "接近核心"} & set(r["sks"]):
+        if r["n"] not in cfg["core_nights"]:
+            continue
+        reasons = []
+        if direct_below and r["direct"] and r["p"] < direct_below:
+            reasons.append(f"直飞往返每人低于 RM{direct_below:,}")
+        if not {"核心窗口", "接近核心"} & set(r["sks"]):
+            if reasons:
+                deals.append({**r, "reasons": reasons})
             continue
         a = by_ak.get(r["ak"])
-        reasons = []
         if a and a["all"]["scans"] >= 3 and r["p"] < a["past_min"]:
             reasons.append(f"{a['name']} 历史新低（之前最低 RM{a['past_min']:,}）")
         if a and a["all"]["scans"] > 1:

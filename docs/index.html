@@ -44,9 +44,15 @@ h2.sec small{font-size:13px;color:var(--muted);font-weight:400}
 .qk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .qk .t{font-size:13px;color:var(--muted)}
 .qk .p{font-size:24px;font-weight:700;margin:2px 0}
-.deals{background:var(--accent-bg);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin-top:14px}
-.deals h3{margin:0 0 6px;font-size:15px;color:var(--accent)}
-.deals li{margin:3px 0}
+.buy{background:var(--good-bg);border:2px solid var(--good);border-radius:14px;padding:14px 16px;margin-top:14px}
+.buy h2{margin:0 0 2px;font-size:22px;color:var(--good);font-weight:800;letter-spacing:.5px}
+.buy ul{list-style:none;margin:10px 0 4px;padding:0}
+.buy li{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;padding:10px 0;border-top:1px solid color-mix(in srgb,var(--good) 25%,transparent)}
+.buy-main{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-width:0}
+.buy-price{font-size:24px;font-weight:800;color:var(--good);white-space:nowrap}
+.buy-what{display:flex;flex-direction:column;gap:2px;min-width:0}
+.buy-why{color:var(--good);font-size:13px;font-weight:600}
+.buy li .gf-row{margin-top:0;margin-left:auto}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .tabs{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;gap:6px;padding:10px 0;margin-top:14px}
 .tab{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 16px;border-radius:999px;cursor:pointer;font-size:15px}
@@ -189,9 +195,9 @@ td.c-x{display:none}
   </dialog>
   <div class="status" id="status">载入中…</div>
   <div id="warn"></div>
+  <div id="deals"></div>
   <a class="jump" href="#conclusion">直接看结论与推荐 ↓</a>
   <div class="quick" id="quick"></div>
-  <div id="deals"></div>
   <div id="promos"></div>
 
   <div class="tabs" id="tabs"></div>
@@ -296,9 +302,20 @@ function renderTop() {
       <div class="p">${rm(r.cheapest.p)}</div>
       <div class="sub">${trip(r.cheapest)}</div></div>` : `<div class="qk"><div class="t">${esc(r.name)}</div>暂无已确认价格</div>`).join("");
 
-  const deals = D.routes.flatMap(r => (r.deals || []).map(d => ({ ...d, route: r.name })));
-  $("deals").innerHTML = deals.length ? `<div class="deals"><h3>划算提醒（樱花期）</h3><ul>${deals.slice(0, 6).map(d =>
-    `<li><b>${rm(d.p)}</b> · ${esc(d.route)} · ${trip(d)} — ${d.reasons.map(esc).join("；")}</li>`).join("")}</ul></div>` : "";
+  const deals = D.routes.flatMap(r => (r.deals || []).map(d => ({ ...d, route: r.name, rid: r.id }))).sort((a, b) => a.p - b.p);
+  const SHOW = 5;
+  $("deals").innerHTML = deals.length ? `<div class="buy">
+      <h2>今天值得购买</h2>
+      <div class="sub">直飞往返每人低于 RM1,500，或樱花期内创航司历史新低 / 比历史平均低 15% 以上 · 价格以订票页为准</div>
+      <ul>${deals.slice(0, SHOW).map(d => `<li>
+        <div class="buy-main">
+          <span class="buy-price">${rm(d.p)}</span>
+          <span class="buy-what"><b>${dateList(d.dates, d.n).out} 出发 · ${d.n}晚 · ${d.o.al === d.r.al ? esc(d.o.al) : `${esc(d.o.al)} / 回 ${esc(d.r.al)}`}</b>
+            <span class="sub">${esc(d.route)} · 去 ${d.o.dep} 回 ${d.r.dep} · ${d.direct ? "直飞" : "转机"} · ${esc(d.bag)}</span>
+            <span class="buy-why">${d.reasons.map(esc).join("；")}</span></span>
+        </div>
+        <div class="gf-row">${flightLinks(d)}</div></li>`).join("")}</ul>
+      ${deals.length > SHOW ? `<div class="sub">另有 ${deals.length - SHOW} 个符合条件的组合，可在下方表格按价格查看</div>` : ""}</div>` : "";
 
   $("tabs").innerHTML = D.routes.map((r, i) => `<button class="tab${i === 0 ? " on" : ""}" data-i="${i}">${esc(r.name)}</button>`).join("");
   $("tabs").onclick = e => { const b = e.target.closest(".tab"); if (!b) return; document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t === b)); selectRoute(+b.dataset.i); };
@@ -547,7 +564,7 @@ function gfUrl(legs, roundTrip) {
 }
 function legSpec(l, date, from, to) { return [date, from, to, l.c, l.via.length, +l.dep.slice(0, 2)]; }
 function flightLinks(r) {
-  const [o, k] = route.id.split("-");
+  const [o, k] = (r.rid || route.id).split("-");
   const out = legSpec(r.o, r.od, o, k), back = legSpec(r.r, addDays(r.od, r.n), k, o);
   const btn = (href, label) => `<a class="btn gf" href="${esc(href)}" target="_blank" rel="noopener" title="在 Google Flights 打开这组航班">${label} <span aria-hidden="true">↗</span></a>`;
   return r.pt === "往返票" ? btn(gfUrl([out, back], true), "查看航班")

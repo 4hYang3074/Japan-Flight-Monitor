@@ -21,6 +21,8 @@ max_connection_hours: 18
 
 # 划算提醒：比该航司历史平均低多少 % 才算划算；也可以给每条航线设目标价（每人往返 MYR，null=不设）
 deal_pct: 15
+# 直飞往返每人低于这个价格（MYR）就列为“今天值得购买”并通知
+buy_direct_below: 1500
 alert_below:
   KUL-KIX: null
   SIN-KIX: null
