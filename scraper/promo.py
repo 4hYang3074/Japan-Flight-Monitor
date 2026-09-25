@@ -170,14 +170,15 @@ def check():
         NEW_FILE.parent.mkdir(exist_ok=True)
         NEW_FILE.write_text(json.dumps(new, ensure_ascii=False, indent=1), encoding="utf-8")
     before = {k: v for k, v in state.items() if k != "updated_at"}
-    state.update({"errors": errors, "notes": notes,
+    state.pop("notes", None)
+    state.update({"errors": errors,
                   "current": sorted(current.values(), key=lambda p: (not p["relevant"], p["title"]))})
     # 只在促销内容有变化时才写文件，避免每次检查都产生无意义的提交
     if first_run or {k: v for k, v in state.items() if k != "updated_at"} != before:
         state["updated_at"] = now
         state_file.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
     has_new = bool(new) and not first_run
-    print(f"promos: {len(current)} current, {len(new)} new relevant, first_run={first_run}, errors={errors}")
+    print(f"promos: {len(current)} current, {len(new)} new relevant, first_run={first_run}, errors={errors}, notes={notes}")
     set_output(has_new)
 
 
