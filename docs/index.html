@@ -20,6 +20,20 @@ html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
 .wrap{max-width:1180px;margin:0 auto;padding:16px}
 h1{font-size:22px;margin:4px 0 6px}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.upd{text-align:right;flex-shrink:0}
+.upd .sub{margin-top:4px;max-width:220px}
+.upd-btn[disabled]{opacity:.75;cursor:progress}
+.upd-btn.busy .spin{display:inline-block;animation:spin 1.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);max-width:520px;width:calc(100% - 32px);padding:18px 20px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{margin:0 0 6px}
+.steps{padding-left:20px;margin:10px 0;font-size:14px;line-height:1.6}
+#tok-input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+.dlg-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:14px}
+.btn.solid{background:var(--accent);color:#fff}
+.btn.ghost{border-color:var(--line);color:var(--muted)}
 h1 span{color:var(--accent)}
 h2.sec{font-size:17px;margin:26px 0 10px;display:flex;align-items:baseline;gap:8px}
 h2.sec small{font-size:13px;color:var(--muted);font-weight:400}
@@ -125,7 +139,35 @@ td.c-x{display:none}
 </head>
 <body>
 <div class="wrap">
-  <h1>2027 关西<span>樱花季</span>机票监控</h1>
+  <div class="topbar">
+    <h1>2027 关西<span>樱花季</span>机票监控</h1>
+    <div class="upd">
+      <button type="button" class="btn upd-btn" id="upd-btn"><span class="spin" aria-hidden="true">↻</span> <span id="upd-label">立即更新</span></button>
+      <div class="sub" id="upd-status"></div>
+    </div>
+  </div>
+  <dialog id="tok-dlg">
+    <form method="dialog" id="tok-form">
+      <h3>设置一次就好：GitHub 授权</h3>
+      <p class="sub">按钮要启动 GitHub 上的扫描，需要一个只能操作这个仓库的 token。它只保存在这台设备的浏览器里，不会上传到任何地方。</p>
+      <ol class="steps">
+        <li>打开 <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub 新建 Fine-grained token</a></li>
+        <li>Token name 随意填，例如“樱花机票更新”；Expiration 可选到明年 5 月</li>
+        <li>Repository access 选 <b>Only select repositories</b> → 只选 <b>Japan-Flight-Monitor</b></li>
+        <li>Permissions → Repository permissions → <b>Actions</b> 选 <b>Read and write</b>（其他都不用开）</li>
+        <li>点 Generate token，复制后贴在下面</li>
+      </ol>
+      <input type="password" id="tok-input" placeholder="github_pat_..." autocomplete="off" spellcheck="false">
+      <div class="sub rise" id="tok-err"></div>
+      <div class="dlg-actions">
+        <a class="sub" href="https://github.com/4hYang3074/Japan-Flight-Monitor/actions/workflows/daily-scan.yml" target="_blank" rel="noopener">不设置，去 GitHub 手动运行 ↗</a>
+        <span>
+          <button type="button" class="btn ghost" id="tok-cancel">取消</button>
+          <button type="submit" class="btn solid" value="save">保存并更新</button>
+        </span>
+      </div>
+    </form>
+  </dialog>
   <div class="status" id="status">载入中…</div>
   <div id="warn"></div>
   <a class="jump" href="#conclusion">直接看结论与推荐 ↓</a>
@@ -438,6 +480,82 @@ function renderPromos(s) {
     <ul class="promos">${items}</ul>
     ${s.errors && s.errors.length ? `<div class="sub rise">部分来源读取失败：${esc(s.errors.join("；"))}</div>` : ""}</div>`;
 }
+
+// ---- 立即更新：用保存在本机的 token 触发 GitHub Actions ----
+const REPO = "4hYang3074/Japan-Flight-Monitor";
+const API = `https://api.github.com/repos/${REPO}/actions/workflows`;
+const TOK_KEY = "gh_dispatch_token";
+const getTok = () => { try { return localStorage.getItem(TOK_KEY); } catch { return null; } };
+const setTok = t => { try { t ? localStorage.setItem(TOK_KEY, t) : localStorage.removeItem(TOK_KEY); } catch {} };
+let pollTimer = null;
+
+function setUpd(busy, label, status) {
+  $("upd-btn").disabled = busy;
+  $("upd-btn").classList.toggle("busy", busy);
+  $("upd-label").textContent = label;
+  $("upd-status").textContent = status || "";
+}
+async function gh(path, opts = {}) {
+  const tok = getTok();
+  const headers = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+  if (tok) headers.Authorization = `Bearer ${tok}`;
+  return fetch(`${API}/${path}`, { ...opts, headers });
+}
+async function latestScan() {
+  const r = await gh("daily-scan.yml/runs?per_page=1");
+  if (!r.ok) return null;
+  return (await r.json()).workflow_runs[0] || null;
+}
+async function watchScan() {
+  clearTimeout(pollTimer);
+  const run = await latestScan().catch(() => null);
+  if (run && run.status !== "completed") {
+    const mins = Math.round((Date.now() - new Date(run.created_at)) / 60000);
+    setUpd(true, "更新中…", `扫描已进行 ${mins} 分钟，通常约 45 分钟，完成后自动刷新`);
+    pollTimer = setTimeout(async () => {
+      const r2 = await latestScan().catch(() => null);
+      if (r2 && r2.id === run.id && r2.status === "completed") {
+        setUpd(false, "立即更新", r2.conclusion === "success" ? "更新完成，正在载入…" : "这次扫描失败了，可到 GitHub Actions 查看");
+        if (r2.conclusion === "success") setTimeout(() => location.reload(), 60000);  // 等 Pages 发布新数据
+      } else watchScan();
+    }, 60000);
+    return true;
+  }
+  setUpd(false, "立即更新", "");
+  return false;
+}
+async function dispatchAll() {
+  setUpd(true, "启动中…", "");
+  if (await watchScan()) return;  // 已经在跑就不重复启动
+  const body = JSON.stringify({ ref: "main" });
+  const res = await Promise.all(["daily-scan.yml", "promo-watch.yml"].map(w =>
+    gh(`${w}/dispatches`, { method: "POST", body }).catch(() => ({ status: 0 }))));
+  const st = res[0].status;
+  if (st === 204) {
+    setUpd(true, "更新中…", "已启动扫描，约 45 分钟，完成后自动刷新");
+    setTimeout(watchScan, 8000);
+  } else if (st === 401 || st === 403 || st === 404) {
+    setTok(null);
+    setUpd(false, "立即更新", "");
+    openTokDlg("token 无效、已过期或权限不足（需要 Actions: Read and write），请重新设置");
+  } else {
+    setUpd(false, "立即更新", `启动失败（${st || "网络错误"}），请稍后再试`);
+  }
+}
+function openTokDlg(err) {
+  $("tok-err").textContent = err || "";
+  $("tok-input").value = "";
+  $("tok-dlg").showModal();
+}
+$("upd-btn").onclick = () => getTok() ? dispatchAll() : openTokDlg();
+$("tok-cancel").onclick = () => $("tok-dlg").close();
+$("tok-form").onsubmit = e => {
+  const t = $("tok-input").value.trim();
+  if (!/^(github_pat_|ghp_)\w{20,}$/.test(t)) { e.preventDefault(); $("tok-err").textContent = "格式不对，应该以 github_pat_ 开头"; return; }
+  setTok(t);
+  dispatchAll();
+};
+watchScan();
 
 // 加到主屏幕的 App 模式没有下拉刷新：切回页面时若已超过 10 分钟就重新载入最新数据
 const loadedAt = Date.now();
