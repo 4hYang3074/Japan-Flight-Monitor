@@ -10,21 +10,12 @@
   "a121667c0f6b": "2026-09-25T04:01:54+00:00",
   "b23b84a41624": "2026-09-25T04:01:54+00:00",
   "7500894e9e40": "2026-09-25T04:01:54+00:00",
-  "e7c8c09db69d": "2026-09-25T04:35:03+00:00"
+  "e7c8c09db69d": "2026-09-25T04:35:03+00:00",
+  "a73230a0e1cd": "2026-09-27T18:28:54+00:00"
  },
  "new_history": [],
  "errors": [],
  "current": [
-  {
-   "source": "AirAsia 官网促销页",
-   "title": "Up to 27% OFF All Flights",
-   "detail": "Book by 27 Sep 2026 on AirAsia MOVE App",
-   "url": "https://www.airasia.com/en/gb/promotions",
-   "deadline": "2026-09-27",
-   "expired": false,
-   "id": "a121667c0f6b",
-   "relevant": true
-  },
   {
    "source": "AirAsia 官网促销页",
    "title": "Airport rides from RM50 only",
@@ -48,11 +39,11 @@
   {
    "source": "AirAsia 官网促销页",
    "title": "Get MOVETIX Event🎫 + Flight✈️",
-   "detail": "Tickets from MYR 1,300. Save up to 20% when you bundle it. Better value, more partying. T&C apply.",
-   "url": "https://www.airasia.com/movetix/en-gb/event/dwp/dwp-2026-jakarta-bundle-1/?departureAirport=KUL",
+   "detail": "Tickets from MYR 1,350. Save up to 20% when you bundle it. Better value, more partying. T&C apply.",
+   "url": "https://www.airasia.com/movetix/en-gb/event/dwp/dwp-2026-jakarta-bundle",
    "deadline": null,
    "expired": false,
-   "id": "e5921b6b0819",
+   "id": "a73230a0e1cd",
    "relevant": false
   },
   {
@@ -87,6 +78,16 @@
   },
   {
    "source": "AirAsia 官网促销页",
+   "title": "Up to 27% OFF All Flights",
+   "detail": "Book by 27 Sep 2026 on AirAsia MOVE App",
+   "url": "https://www.airasia.com/en/gb/promotions",
+   "deadline": "2026-09-27",
+   "expired": true,
+   "id": "a121667c0f6b",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
    "title": "Zoom into RM2 OFF x 2 rides…",
    "detail": "to/from your nearest LRT station! Elevate your daily hustle in collab with Pulse by Prasarana Malaysia",
    "url": "https://www.airasia.com/aa/pulseapp/",
@@ -116,5 +117,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-09-25T05:05:07+00:00"
+ "updated_at": "2026-09-27T18:28:54+00:00"
 }
