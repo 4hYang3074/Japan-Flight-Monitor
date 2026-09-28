@@ -47,12 +47,14 @@ def leg_view(r):
 
 
 def combine(route_raw, cfg, bloom):
+    """只用直飞航班组合往返；去程与回程可以是不同航司。"""
     by_date_in = {}
     for r in route_raw["inbound"]:
-        by_date_in.setdefault(r["dep"][:10], []).append(r)
+        if r["stops"] == 0:
+            by_date_in.setdefault(r["dep"][:10], []).append(r)
     rt = {(x["out_dep"], x["ret_dep"]): x for x in route_raw.get("roundtrip", [])}
     rows = []
-    for o in route_raw["outbound"]:
+    for o in (x for x in route_raw["outbound"] if x["stops"] == 0):
         od = date.fromisoformat(o["dep"][:10])
         for n in cfg["nights"]:
             rd = od + timedelta(days=n)

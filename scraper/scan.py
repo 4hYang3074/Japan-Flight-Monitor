@@ -175,19 +175,14 @@ def scan_day(frm, to, d, route, cfg, errors, coverage, only=None):
 
     if only:
         return list(found.values())
-    flights, err = fetch(frm, to, d, cur)
+    # 只要直飞：再查一次不限航司的直飞，收录名单以外（例如新开航）的直飞航司
+    flights, err = fetch(frm, to, d, cur, max_stops=0)
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     if err:
         errors.append(f"{frm}->{to} {d} general: {err}")
-    conns = []
     for f in flights:
-        r = to_record(f, utc, now, "general")
-        if r["stops"] == 0:
-            add(r)
-        elif r["stops"] == 1 and r["price"] is not None and r["minutes"] <= cfg["max_connection_hours"] * 60:
-            conns.append(r)
-    for r in sorted(conns, key=lambda r: r["price"])[: cfg["max_connections_per_day"]]:
-        add(r)
+        if len(f["legs"]) == 1:
+            add(to_record(f, utc, now, "general"))
     time.sleep(SLEEP)
     return list(found.values())
 

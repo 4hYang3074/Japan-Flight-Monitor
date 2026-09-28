@@ -212,7 +212,6 @@ td.c-x{display:none}
   <h2 class="sec">② 全部航班组合 <small>默认按价格从低到高，点表头可改排序</small></h2>
   <div class="filters">
     <label>晚数 <span class="chips" id="nights"></span></label>
-    <label><input type="checkbox" id="direct"> 只看直飞</label>
     <label>航司 <select id="airline"><option value="">全部</option></select></label>
     <label>樱花 <select id="sakura"><option value="">全部</option><option>核心窗口</option><option>接近核心</option><option>较早</option><option>较晚</option></select></label>
     <label>出发 <input type="date" id="from"> – <input type="date" id="to"></label>
@@ -328,7 +327,7 @@ function renderTop() {
   renderConclusion();
   $("foot").innerHTML = `价格来源：Google Flights 实时报价（经济舱最低票价档），每个价格都是当天那次查询实际返回的数字，未做任何推算；订票时以航司结账页为准。
     “往返票”=同航司指定去回程的往返票价（全服务航司通常比两张单程便宜很多）；“单程×2”=两张单程票价相加，廉航直接买来回票也是同样价格，可用“查看来回”一次订完。时间均为当地时间。
-    樱花参考：大阪满开 ${fmtD(D.sakura.full_bloom)}（${esc(D.sakura.source)}）。转机航班只收录 Google 返回的每日最便宜 3 个、总时长 18 小时内的一次转机选项。`;
+    樱花参考：大阪满开 ${fmtD(D.sakura.full_bloom)}（${esc(D.sakura.source)}）。只收录直飞航班，去程与回程可以是不同航司。`;
 }
 
 function renderConclusion() {
@@ -352,7 +351,7 @@ function renderConclusion() {
   }).join("");
   const scans = Math.max(0, ...D.routes.flatMap(r => r.airlines.map(a => a.all.scans)));
   $("rule").innerHTML = `推荐分怎么算（满分 100）：<b>价格 40</b>＝对比该航司以往所有扫描的平均价，持平得 20，每便宜 1% 加 1 分（便宜 20% 以上满分）；
-    <b>樱花 30</b>＝核心窗口 30、接近核心 20、较早/较晚 8；<b>比价 20</b>＝对比当天整条航线最低价；<b>便利 10</b>＝去回都直飞 10、单程直飞 5。
+    <b>樱花 30</b>＝核心窗口 30、接近核心 20、较早/较晚 8；<b>比价 20</b>＝对比当天整条航线最低价；<b>便利 10</b>＝直飞（现在只收录直飞，都是满分）。
     目前累计 ${scans} 次扫描${scans < 3 ? "，历史数据还少，分数和“现在买吗”会随着天数增加越来越准" : ""}。`;
 }
 
@@ -371,7 +370,7 @@ function bagChip(bag) {
 function renderAirlines() {
   const cur = $("airline").value;
   $("airlines").innerHTML = (route.airlines || []).map(a => `<tr data-a="${esc(a.name)}" class="al-row${a.name === cur ? " on" : ""}" aria-expanded="${a.name === cur}">
-    <td><div class="al"><span class="chev" aria-hidden="true">▸</span>${esc(a.name)}</div><div class="sub">${a.direct ? "有直飞" : "转机"} · ${a.n} 个出发日</div></td>
+    <td><div class="al"><span class="chev" aria-hidden="true">▸</span>${esc(a.name)}</div><div class="sub">直飞 · ${a.n} 个出发日</div></td>
     <td data-l="今日最低"><div class="price">${rm(a.min)}</div><div class="sub">${fmtD(a.low.od)}(${wk(a.low.od)}) 出发 ${a.low.n}晚</div></td>
     <td data-l="今日平均"><div class="price">${rm(a.avg)}</div></td>
     <td data-l="今日最高"><div class="price">${rm(a.max)}</div><div class="sub">${fmtD(a.high.od)} 出发</div></td>
@@ -444,9 +443,9 @@ function selectRoute(i) {
 function reset() { shown = PAGE; renderRows(); }
 
 function filtered() {
-  const al = $("airline").value, sk = $("sakura").value, dir = $("direct").checked, f = $("from").value, t = $("to").value;
+  const al = $("airline").value, sk = $("sakura").value, f = $("from").value, t = $("to").value;
   const rows = route.rows.filter(r =>
-    nightsOn.has(r.n) && (!dir || r.direct) && (!al || r.ak === al) &&
+    nightsOn.has(r.n) && (!al || r.ak === al) &&
     (!sk || r.sks.includes(sk)) && (!f && !t || r.dates.some(x => (!f || x >= f) && (!t || x <= t))));
   const val = {
     p: r => r.p, od: r => r.od, n: r => r.n, oal: r => r.o.al + r.o.dep, ral: r => r.r.al + r.r.dep,
@@ -479,7 +478,7 @@ function renderRows() {
 }
 
 $("more").onclick = () => { shown += PAGE * 2; renderRows(); };
-["sakura", "direct"].forEach(id => $(id).onchange = reset);
+$("sakura").onchange = reset;
 ["from", "to"].forEach(id => $(id).onchange = () => { reset(); renderCal(); });
 $("datechip").onclick = e => {
   if (!e.target.closest("button")) return;
@@ -657,6 +656,13 @@ document.addEventListener("visibilitychange", () => {
 const watchReq = fetch("watch.json", { cache: "no-store" }).then(r => r.ok ? r.json() : []).catch(() => []);
 const promoReq = fetch("promos.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null);
 fetch("data.json", { cache: "no-store" }).then(r => r.json()).then(async d => {
+  // 只显示直飞（旧数据里可能还有转机组合，新扫描已不再收录）
+  for (const r of d.routes) {
+    r.rows = r.rows.filter(x => x.direct);
+    r.airlines = (r.airlines || []).filter(a => a.direct);
+    ["best", "deals", "top"].forEach(k => { r[k] = (r[k] || []).filter(x => x.direct); });
+    if (r.cheapest && !r.cheapest.direct) r.cheapest = r.rows.filter(x => d.core_nights.includes(x.n)).sort((a, b) => a.p - b.p)[0] || null;
+  }
   D = d; renderTop(); selectRoute(0);
   renderWatch(await watchReq);
   renderPromos(await promoReq);

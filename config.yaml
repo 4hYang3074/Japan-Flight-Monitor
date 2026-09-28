@@ -15,9 +15,7 @@ sakura:
 nights: [5, 6, 7, 8, 9]
 core_nights: [6, 7, 8]
 
-# 转机航班：每天每个方向最多保留几个最便宜的、总时长上限（小时）
-max_connections_per_day: 3
-max_connection_hours: 18
+# 只收录直飞航班（去程、回程可以是不同航司）
 
 # 划算提醒：比该航司历史平均低多少 % 才算划算；也可以给每条航线设目标价（每人往返 MYR，null=不设）
 deal_pct: 15
