@@ -68,26 +68,6 @@
   },
   {
    "source": "AirAsia 官网促销页",
-   "title": "See the colours of autumn at Beijing, Osaka, Seoul and More!",
-   "detail": "Get an extra MYR 200 OFF your trip now by applying code [AUTUMNSNAP] at check out.",
-   "url": "https://www.airasia.com/hotels/en/gb",
-   "deadline": null,
-   "expired": false,
-   "id": "0eb2ba55d114",
-   "relevant": false
-  },
-  {
-   "source": "AirAsia 官网促销页",
-   "title": "Up to 27% OFF All Flights",
-   "detail": "Book by 27 Sep 2026 on AirAsia MOVE App",
-   "url": "https://www.airasia.com/en/gb/promotions",
-   "deadline": "2026-09-27",
-   "expired": true,
-   "id": "a121667c0f6b",
-   "relevant": false
-  },
-  {
-   "source": "AirAsia 官网促销页",
    "title": "Zoom into RM2 OFF x 2 rides…",
    "detail": "to/from your nearest LRT station! Elevate your daily hustle in collab with Pulse by Prasarana Malaysia",
    "url": "https://www.airasia.com/aa/pulseapp/",
@@ -105,17 +85,7 @@
    "expired": true,
    "id": "7500894e9e40",
    "relevant": false
-  },
-  {
-   "source": "AirAsia 官网促销页",
-   "title": "官网横幅（代码 FH_COMBODEAL_190926_my_en）",
-   "detail": "",
-   "url": "https://www.airasia.com/snap/en/gb",
-   "deadline": null,
-   "expired": false,
-   "id": "c0a5b54b2a73",
-   "relevant": false
   }
  ],
- "updated_at": "2026-09-27T18:28:54+00:00"
+ "updated_at": "2026-09-28T03:05:22+00:00"
 }
