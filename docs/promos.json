@@ -11,12 +11,37 @@
   "b23b84a41624": "2026-09-25T04:01:54+00:00",
   "7500894e9e40": "2026-09-25T04:01:54+00:00",
   "e7c8c09db69d": "2026-09-25T04:35:03+00:00",
-  "a73230a0e1cd": "2026-09-27T18:28:54+00:00"
+  "a73230a0e1cd": "2026-09-27T18:28:54+00:00",
+  "c0b8d184f99c": "2026-10-05T04:34:11+00:00",
+  "16fa5ba0e99a": "2026-10-05T04:34:11+00:00"
  },
  "new_history": [],
  "errors": [
-  "官网促销页: AttributeError: 'NoneType' object has no attribute 'group'"
+  "官网促销页: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1000)>"
  ],
- "current": [],
- "updated_at": "2026-10-05T02:21:14+00:00"
+ "current": [
+  {
+   "source": "AirAsia 官方新闻室",
+   "title": "AirAsia celebrates return of Ahmedabad and Amritsar flights with a special sale",
+   "detail": "To commemorate the long-awaited return of its Ahmedabad and Amritsar routes, AirAsia will be offering its guests special fares to these two vibrant Indian cities with limited time all-in one-way fares",
+   "url": "https://newsroom.airasia.com/news/airasia-celebrates-return-of-ahmedabad-and-amritsar-flights-with-a-special-sale",
+   "published": "2026-10-05",
+   "deadline": null,
+   "expired": false,
+   "id": "16fa5ba0e99a",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官方新闻室",
+   "title": "AirAsia tawar tambang promosi istimewa sempena kembalinya penerbangan ke Ahmedabad dan Amritsar",
+   "detail": "Sempena kembalinya laluan Ahmedabad dan Amritsar yang dinanti-nantikan, AirAsia menawarkan tambang istimewa bagi penerbangan ke dua destinasi ikonik di India ini, dengan tambang termasuk semua sehala ",
+   "url": "https://newsroom.airasia.com/news/airasia-tawar-tambang-promosi-istimewa-sempena-kembalinya-penerbangan-ke-ahmedabad-dan-amritsar",
+   "published": "2026-10-05",
+   "deadline": null,
+   "expired": false,
+   "id": "c0b8d184f99c",
+   "relevant": false
+  }
+ ],
+ "updated_at": "2026-10-05T04:34:11+00:00"
 }
