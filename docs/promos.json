@@ -17,7 +17,7 @@
  },
  "new_history": [],
  "errors": [
-  "官网促销页: AttributeError: 'NoneType' object has no attribute 'group'"
+  "官网促销页: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1000)>"
  ],
  "current": [
   {
@@ -43,5 +43,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-10-06T00:45:46+00:00"
+ "updated_at": "2026-10-06T10:01:33+00:00"
 }
