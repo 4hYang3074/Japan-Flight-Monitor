@@ -163,15 +163,26 @@ def check():
     state = load(state_file, {"seen": {}, "new_history": []})
     current, errors = {}, []
     notes = []
-    for name, fn in [("官网促销页", from_promo_page)] + [(u, lambda u=u: from_rss(u)) for u in RSS_FEEDS]:
+
+    def keep_page_results():
+        for p in state.get("current", []):
+            if p["source"] == "AirAsia 官网促销页":
+                current[p["id"]] = {k: v for k, v in p.items() if k not in ("id", "relevant", "expired", "deadline")} | {
+                    "deadline_text": f"book by {date.fromisoformat(p['deadline']):%d %b %Y}" if p.get("deadline") else ""}
+
+    sources = [(u, lambda u=u: from_rss(u)) for u in RSS_FEEDS]
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        # GitHub 不在马来西亚，读不到马来西亚促销：官网促销页只由本机检查，这里沿用本机上次的结果与报错
+        keep_page_results()
+        errors += [e for e in state.get("errors", []) if e.startswith("官网促销页")]
+    else:
+        sources.insert(0, ("官网促销页", from_promo_page))
+    for name, fn in sources:
         try:
             current.update(fn())
         except WrongMarket as e:
             notes.append(str(e))
-            for p in state.get("current", []):
-                if p["source"] == "AirAsia 官网促销页":
-                    current[p["id"]] = {k: v for k, v in p.items() if k not in ("id", "relevant", "expired", "deadline")} | {
-                        "deadline_text": f"book by {date.fromisoformat(p['deadline']):%d %b %Y}" if p.get("deadline") else ""}
+            keep_page_results()
         except Exception as e:
             errors.append(f"{name}: {type(e).__name__}: {e}")
     today = datetime.now(timezone(timedelta(hours=8))).date()
