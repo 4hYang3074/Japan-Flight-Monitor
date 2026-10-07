@@ -17,7 +17,7 @@
  },
  "new_history": [],
  "errors": [
-  "官网促销页: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1000)>"
+  "官网促销页: ValueError: 页面里找不到 __NEXT_DATA__（147057 字节，标题：AirAsia MOVE | Discover deals on flights, hotels, rides &amp; more）"
  ],
  "current": [
   {
@@ -43,5 +43,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-10-07T00:05:20+00:00"
+ "updated_at": "2026-10-07T04:35:23+00:00"
 }
