@@ -13,13 +13,40 @@
   "e7c8c09db69d": "2026-09-25T04:35:03+00:00",
   "a73230a0e1cd": "2026-09-27T18:28:54+00:00",
   "c0b8d184f99c": "2026-10-05T04:34:11+00:00",
-  "16fa5ba0e99a": "2026-10-05T04:34:11+00:00"
+  "16fa5ba0e99a": "2026-10-05T04:34:11+00:00",
+  "51050a2cd626": "2026-10-07T04:55:54+00:00",
+  "79ce922cf3bc": "2026-10-07T04:55:54+00:00",
+  "c95c1e023af5": "2026-10-07T04:55:54+00:00",
+  "67845e16a7ef": "2026-10-07T04:55:54+00:00",
+  "37909b436866": "2026-10-07T04:55:54+00:00",
+  "27d5fc9ea621": "2026-10-07T04:55:54+00:00"
  },
- "new_history": [],
- "errors": [
-  "官网促销页: ValueError: 页面里找不到 __NEXT_DATA__（147057 字节，标题：AirAsia MOVE | Discover deals on flights, hotels, rides &amp; more）"
+ "new_history": [
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "官网大促横幅（代码 MOVE_MEGASALE-Launch_071026_my_en）",
+   "detail": "",
+   "url": "https://www.airasia.com/campaigns/megasale/en/my",
+   "deadline": null,
+   "expired": false,
+   "id": "51050a2cd626",
+   "relevant": true,
+   "found_at": "2026-10-07T04:55:54+00:00"
+  }
  ],
+ "errors": [],
  "current": [
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "官网大促横幅（代码 MOVE_MEGASALE-Launch_071026_my_en）",
+   "detail": "",
+   "url": "https://www.airasia.com/campaigns/megasale/en/my",
+   "deadline": null,
+   "expired": false,
+   "id": "51050a2cd626",
+   "relevant": true,
+   "found_at": "2026-10-07T04:55:54+00:00"
+  },
   {
    "source": "AirAsia 官方新闻室",
    "title": "AirAsia celebrates return of Ahmedabad and Amritsar flights with a special sale",
@@ -41,7 +68,67 @@
    "expired": false,
    "id": "c0b8d184f99c",
    "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "Fly to Vietnam from as low as MYR 300",
+   "detail": "Explore Hanoi, Ho Chi Minh City, Da Nang and more!",
+   "url": "https://www.airasia.com/campaigns/flybeyond-vietnam/en/my/",
+   "deadline": null,
+   "expired": false,
+   "id": "27d5fc9ea621",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "Get MOVETIX Event🎫 + Flight✈️",
+   "detail": "Tickets from MYR 1,350. Save up to 20% when you bundle it. Better value, more partying. T&C apply.",
+   "url": "https://www.airasia.com/movetix/en-gb/event/dwp/dwp-2026-jakarta-bundle",
+   "deadline": null,
+   "expired": false,
+   "id": "a73230a0e1cd",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "MEGA savings on hotels!",
+   "detail": "Get up to MYR 210 OFF hotels in all destinations with code MEGAMOVE. It's a MEGA SALEbration.",
+   "url": "https://www.airasia.com/campaigns/megasale/en/my",
+   "deadline": null,
+   "expired": false,
+   "id": "67845e16a7ef",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "Planning to balik kampung or explore Malaysia?",
+   "detail": "Be sure to add 10KG checked baggage with flight from MYR 15!",
+   "url": "https://www.airasia.com/flight/en/gb",
+   "deadline": null,
+   "expired": false,
+   "id": "c95c1e023af5",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "官网横幅（代码 GMY_China_051026_my_en）",
+   "detail": "",
+   "url": "https://www.airasia.com/flight/en/gb",
+   "deadline": null,
+   "expired": false,
+   "id": "79ce922cf3bc",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "🚗💨 Get RM1 rides everyday from 12pm-4pm",
+   "detail": "It's our birthday and you're getting a gift too 🎁 Enjoy rides from as low as RM1 daily from 12pm-4pm ⏰",
+   "url": "https://www.airasia.com/ride/",
+   "deadline": null,
+   "expired": false,
+   "id": "37909b436866",
+   "relevant": false
   }
  ],
- "updated_at": "2026-10-07T04:35:23+00:00"
+ "updated_at": "2026-10-07T04:55:54+00:00"
 }
