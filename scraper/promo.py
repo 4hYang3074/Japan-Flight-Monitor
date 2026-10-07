@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import ssl
 import subprocess
 import sys
 import urllib.request
@@ -60,9 +61,24 @@ def banner_date(code):
         return None
 
 
+def ssl_context():
+    """系统证书库之外再加 certifi（若已安装）。Windows 证书库可能缺 ISRG Root X2，
+    验证 Let's Encrypt 新证书链时会走到 2025-09 已过期的交叉签名而报 certificate has expired。"""
+    ctx = ssl.create_default_context()
+    try:
+        import certifi
+        ctx.load_verify_locations(certifi.where())
+    except ImportError:
+        pass
+    return ctx
+
+
+SSL_CTX = ssl_context()
+
+
 def get(url):
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept-Language": "en"})
-    with urllib.request.urlopen(req, timeout=30) as r:
+    with urllib.request.urlopen(req, timeout=30, context=SSL_CTX) as r:
         return r.read().decode("utf-8", "replace")
 
 
