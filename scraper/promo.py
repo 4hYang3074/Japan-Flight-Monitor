@@ -75,7 +75,13 @@ class WrongMarket(Exception):
 
 
 def from_promo_page():
-    data = json.loads(NEXT_DATA.search(get(PROMO_PAGE)).group(1))
+    html = get(PROMO_PAGE)
+    m = NEXT_DATA.search(html)
+    if not m:
+        # 页面结构变了，或被防爬虫挡下；记下页面标题方便判断是哪一种
+        title = re.search(r"<title[^>]*>(.*?)</title>", html, re.S | re.I)
+        raise ValueError(f"页面里找不到 __NEXT_DATA__（{len(html)} 字节，标题：{title.group(1).strip()[:80] if title else '无'}）")
+    data = json.loads(m.group(1))
     # AirAsia 按访问者 IP 决定国家版本；非马来西亚版本里没有马来西亚的促销
     geo = data.get("props", {}).get("pageProps", {}).get("geoId")
     if geo != "MY":
