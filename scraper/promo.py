@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import ssl
 import subprocess
 import sys
 import urllib.request
@@ -17,13 +18,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
 NEXT_DATA = re.compile(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.S)
+NEXT_F = re.compile(r"self\.__next_f\.push\((\[.*?\])\)</script>", re.S)
 
 
 def load(p, default=None):
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else default
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36"
-PROMO_PAGE = "https://www.airasia.com/en/gb/promotions"
+# 原促销页 /en/gb/promotions 自 2026-10 起转址到首页，促销改为首页的大横幅与“Promotions”卡片
+PROMO_PAGE = "https://www.airasia.com/en/gb/"
 RSS_FEEDS = ["https://newsroom.airasia.com/news?format=rss", "https://newsroom.airasia.com/stories?format=rss"]
 SALE_WORDS = re.compile(r"\bsale\b|% ?off|\boff\b|free seat|free seats|promo|low fares?|deal|discount|mega|big sale|\bfrom (myr|rm)", re.I)
 FLIGHT = re.compile(r"flight|fly\b|fares?\b|seats?\b|airasia x|/flights?/", re.I)
@@ -60,9 +63,24 @@ def banner_date(code):
         return None
 
 
+def ssl_context():
+    """系统证书库之外再加 certifi（若已安装）。Windows 证书库可能缺 ISRG Root X2，
+    验证 Let's Encrypt 新证书链时会走到 2025-09 已过期的交叉签名而报 certificate has expired。"""
+    ctx = ssl.create_default_context()
+    try:
+        import certifi
+        ctx.load_verify_locations(certifi.where())
+    except ImportError:
+        pass
+    return ctx
+
+
+SSL_CTX = ssl_context()
+
+
 def get(url):
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept-Language": "en"})
-    with urllib.request.urlopen(req, timeout=30) as r:
+    with urllib.request.urlopen(req, timeout=30, context=SSL_CTX) as r:
         return r.read().decode("utf-8", "replace")
 
 
@@ -74,10 +92,45 @@ class WrongMarket(Exception):
     pass
 
 
+def page_data(html):
+    """官网页面数据：旧版 Next.js 放在 __NEXT_DATA__；新版（App Router）分散在多段 self.__next_f.push(...) 里，
+    拼起来后每行是“编号:JSON”。"""
+    m = NEXT_DATA.search(html)
+    if m:
+        return json.loads(m.group(1))
+    stream = "".join(c[1] for c in map(json.loads, NEXT_F.findall(html)) if len(c) > 1 and isinstance(c[1], str))
+    data = []
+    for line in stream.split("\n"):
+        key, _, body = line.partition(":")
+        if re.fullmatch(r"[0-9a-f]+", key):
+            try:
+                data.append(json.loads(body))
+            except ValueError:
+                pass
+    if not data:
+        # 页面结构又变了，或被防爬虫挡下；记下页面标题方便判断是哪一种
+        title = re.search(r"<title[^>]*>(.*?)</title>", html, re.S | re.I)
+        raise ValueError(f"页面里找不到页面数据（{len(html)} 字节，标题：{title.group(1).strip()[:80] if title else '无'}）")
+    return data
+
+
+def find_key(o, key):
+    if isinstance(o, dict):
+        if key in o:
+            return o[key]
+        o = list(o.values())
+    if isinstance(o, list):
+        for v in o:
+            r = find_key(v, key)
+            if r is not None:
+                return r
+    return None
+
+
 def from_promo_page():
-    data = json.loads(NEXT_DATA.search(get(PROMO_PAGE)).group(1))
+    data = page_data(get(PROMO_PAGE))
     # AirAsia 按访问者 IP 决定国家版本；非马来西亚版本里没有马来西亚的促销
-    geo = data.get("props", {}).get("pageProps", {}).get("geoId")
+    geo = find_key(data, "geoId")
     if geo != "MY":
         raise WrongMarket(f"官网促销页按 IP 显示了 {geo} 版本，读不到马来西亚促销，沿用上次马来西亚版结果")
     found = {}
@@ -86,13 +139,15 @@ def from_promo_page():
         if isinstance(o, dict):
             title = o.get("title") or o.get("headline") or ""
             sub = o.get("subtitle") or o.get("subTitle") or o.get("subheadline") or ""
-            ban = o.get("bannerID") or ""
-            text = f"{title} {sub} {ban}"
-            if isinstance(title, str) and isinstance(sub, str) and SALE_WORDS.search(text):
-                url = o.get("url") or o.get("redirectUrl") or PROMO_PAGE
+            # 只看带图片的横幅/卡片，避开导航栏、产品图标里的“Promotions”“Deals”字样
+            img = o.get("backgroundImageUrl") or (o.get("backgroundImage") or {}).get("src") or ""
+            ban = o.get("bannerID") or (o.get("label") if img else "") or ""
+            text = f"{title} {sub} {ban} {img.rsplit('/', 1)[-1]}"
+            if (img or ban) and isinstance(title, str) and isinstance(sub, str) and isinstance(ban, str) and SALE_WORDS.search(text):
+                url = o.get("url") or o.get("redirectUrl") or o.get("redirectionUrl") or PROMO_PAGE
                 label = title or f"官网横幅（代码 {ban}）"
                 if not title and BIG_SALE_BANNER.search(ban):
-                    label = f"大促预告横幅（代码 {ban}）"
+                    label = f"官网大促横幅（代码 {ban}）"
                 found[pid("page", label, sub)] = {"source": "AirAsia 官网促销页", "title": label.strip(),
                                                   "detail": sub.strip(), "url": url, "banner": ban,
                                                   "deadline_text": text}
@@ -141,15 +196,26 @@ def check():
     state = load(state_file, {"seen": {}, "new_history": []})
     current, errors = {}, []
     notes = []
-    for name, fn in [("官网促销页", from_promo_page)] + [(u, lambda u=u: from_rss(u)) for u in RSS_FEEDS]:
+
+    def keep_page_results():
+        for p in state.get("current", []):
+            if p["source"] == "AirAsia 官网促销页":
+                current[p["id"]] = {k: v for k, v in p.items() if k not in ("id", "relevant", "expired", "deadline")} | {
+                    "deadline_text": f"book by {date.fromisoformat(p['deadline']):%d %b %Y}" if p.get("deadline") else ""}
+
+    sources = [(u, lambda u=u: from_rss(u)) for u in RSS_FEEDS]
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        # GitHub 不在马来西亚，读不到马来西亚促销：官网促销页只由本机检查，这里沿用本机上次的结果与报错
+        keep_page_results()
+        errors += [e for e in state.get("errors", []) if e.startswith("官网促销页")]
+    else:
+        sources.insert(0, ("官网促销页", from_promo_page))
+    for name, fn in sources:
         try:
             current.update(fn())
         except WrongMarket as e:
             notes.append(str(e))
-            for p in state.get("current", []):
-                if p["source"] == "AirAsia 官网促销页":
-                    current[p["id"]] = {k: v for k, v in p.items() if k not in ("id", "relevant", "expired", "deadline")} | {
-                        "deadline_text": f"book by {date.fromisoformat(p['deadline']):%d %b %Y}" if p.get("deadline") else ""}
+            keep_page_results()
         except Exception as e:
             errors.append(f"{name}: {type(e).__name__}: {e}")
     today = datetime.now(timezone(timedelta(hours=8))).date()
