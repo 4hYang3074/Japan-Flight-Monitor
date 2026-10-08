@@ -90,16 +90,6 @@
   },
   {
    "source": "AirAsia 官网促销页",
-   "title": "MEGA savings on hotels!",
-   "detail": "Get up to MYR 210 OFF hotels in all destinations with code MEGAMOVE. It's a MEGA SALEbration.",
-   "url": "https://www.airasia.com/campaigns/megasale/en/my",
-   "deadline": null,
-   "expired": false,
-   "id": "67845e16a7ef",
-   "relevant": false
-  },
-  {
-   "source": "AirAsia 官网促销页",
    "title": "Planning to balik kampung or explore Malaysia?",
    "detail": "Be sure to add 10KG checked baggage with flight from MYR 15!",
    "url": "https://www.airasia.com/flight/en/gb",
@@ -129,5 +119,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-10-07T05:05:22+00:00"
+ "updated_at": "2026-10-08T23:32:31+00:00"
 }
