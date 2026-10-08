@@ -309,7 +309,7 @@ def main():
         old_legs = [r for r in rr["outbound"] + rr["inbound"] if r.get("old")]
         carried = {r["code"] for r in old_legs}
         old_since = min((r["fetched_at"] for r in old_legs), default="")[:10]
-        for codes, tail in ((carried, f"先显示最近一次查到的旧价（{old_since} 起，标“旧价”，不计入今日最低与提醒）"),
+        for codes, tail in ((carried, f"先显示最近一次查到的旧价（{old_since} 起，标“旧价”，不计入今日最低与提醒）；实时价请点航班旁的官网按钮"),
                             (unpriced - carried, "暂时无法比价，请到航司官网查看")):
             if codes:
                 names = "、".join(cov[c]["airline"] for c in sorted(codes))
