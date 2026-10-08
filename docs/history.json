@@ -1237,9 +1237,9 @@
 "airline": "Malaysia Airlines",
 "n": 32,
 "min": 4747,
-"max": 7259,
-"median": 6313,
-"avg": 6216,
+"max": 9952,
+"median": 6464,
+"avg": 6310,
 "min_od": "2027-04-18"
 },
 {
@@ -1248,9 +1248,9 @@
 "airline": "Singapore Airlines",
 "n": 32,
 "min": 2882,
-"max": 4446,
+"max": 4574,
 "median": 3856,
-"avg": 3641,
+"avg": 3658,
 "min_od": "2027-04-12"
 },
 {
