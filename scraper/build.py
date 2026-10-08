@@ -9,6 +9,7 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
 MIN_OK_RATIO = 0.3
+CARRY_DAYS = 7  # Google 只给航班不给价时，沿用该航司旧价的最长天数
 MIXED = "混搭（去回不同航司）"
 
 
@@ -85,7 +86,7 @@ def row_key(r):
 
 
 def merge_key(r):
-    return (r["n"], r["o"]["c"], r["o"]["dep"], r["o"]["arr"], tuple(r["o"]["via"]),
+    return (r.get("old", False), r["n"], r["o"]["c"], r["o"]["dep"], r["o"]["arr"], tuple(r["o"]["via"]),
             r["r"]["c"], r["r"]["dep"], r["r"]["arr"], tuple(r["r"]["via"]), r["p"], r["pt"], r["bag"])
 
 
@@ -105,8 +106,9 @@ def merge_rows(rows):
     return merged
 
 
-def airline_stats(rid, rows, hist, today):
-    """按航司分别统计今天的价格，并把结果追加到 hist，再结合历史所有扫描算累计值。"""
+def airline_stats(rid, rows, hist, today, record=True):
+    """按航司分别统计今天的价格，并把结果追加到 hist，再结合历史所有扫描算累计值。
+    record=False 用于沿用的旧价：照常显示，但不写进 hist。"""
     groups = {}
     for r in rows:
         groups.setdefault(r["ak"], []).append(r)
@@ -122,12 +124,16 @@ def airline_stats(rid, rows, hist, today):
         high = min((r for r in g if r["od"] == high_od), key=lambda r: r["p"])
         past = sorted((h for h in hist if h["route"] == rid and h["airline"] == ak), key=lambda h: h["date"])
         prev = past[-1] if past else None
-        hist.append({"date": today, "route": rid, "airline": ak, **st, "min_od": low["od"]})
-        every = past + [hist[-1]]
+        entry = {"date": today, "route": rid, "airline": ak, **st, "min_od": low["od"]}
+        if record:
+            hist.append(entry)
+        every = past + [entry] if record or not past else past
         lo = min(every, key=lambda h: (h["min"], h["date"]))
         n_all = sum(h["n"] for h in every)
         past_min = min((h["min"] for h in past), default=None)
-        if past_min is None:
+        if not record:
+            verdict = f"Google 今天没给报价，这是 {old_date(g)} 扫描时的旧价"
+        elif past_min is None:
             verdict = "首次记录，暂无历史可比"
         elif st["min"] < past_min:
             verdict = f"创历史新低（之前最低 RM{past_min:,}）"
@@ -136,7 +142,7 @@ def airline_stats(rid, rows, hist, today):
         else:
             verdict = f"比历史最低 RM{past_min:,} 高 {round((st['min'] - past_min) / past_min * 100)}%，可以再观察"
         out.append({
-            "past_min": past_min, "verdict": verdict,
+            "past_min": past_min, "verdict": verdict, "old": None if record else old_date(g),
             "name": ak, "mixed": ak == MIXED, "direct": any(r["direct"] for r in g), **st,
             "low": {"od": low["od"], "n": low["n"], "dep": low["o"]["dep"]},
             "high": {"od": high["od"], "n": high["n"]},
@@ -148,6 +154,26 @@ def airline_stats(rid, rows, hist, today):
                     "scans": len(every), "since": every[0]["date"]},
         })
     out.sort(key=lambda a: (a["mixed"], a["min"]))
+    return out
+
+
+def old_date(rows):
+    return min(r["f"] for r in rows)[:10]
+
+
+def carry_old_rows(pr, codes, now, bloom):
+    """把上一次结果里涉及 codes 航司、且抓取不超过 CARRY_DAYS 天的组合拆回逐日行，标记为旧价。"""
+    out = []
+    for r in pr["rows"] if pr else []:
+        if not {r["o"]["c"], r["r"]["c"]} & codes:
+            continue
+        if now - datetime.fromisoformat(r["f"]) > timedelta(days=CARRY_DAYS):
+            continue
+        for d in r["dates"]:
+            od = date.fromisoformat(d)
+            x = {k: v for k, v in r.items() if k not in ("dates", "sks", "chg", "rel", "sc")}
+            out.append({**x, "od": d, "rd": (od + timedelta(days=r["n"])).isoformat(),
+                        "sk": sakura_tag(od, r["n"], bloom), "old": True, "chg": None})
     return out
 
 
@@ -252,7 +278,26 @@ def main():
             routes_out.append(pr)
             continue
 
+        cov = {}
+        for c in raw["coverage"]:
+            if c["route"] != rid:
+                continue
+            e = cov.setdefault(c["code"], {"airline": c["airline"], "days": 0, "found": 0, "priced": 0, "errors": 0})
+            e["days"] += 1
+            e["found"] += c["count"] > 0
+            e["priced"] += c.get("priced", c["count"]) > 0
+            e["errors"] += c["error"]
+
         rows = combine(rr, cfg, bloom)
+        # 有航班却完全没有报价（例如 AirAsia 大促期间 Google 不显示价格）：沿用旧价并标出来
+        unpriced = {c for c, e in cov.items() if e["found"] and not e["priced"]}
+        old_rows = carry_old_rows(pr, unpriced, datetime.now(timezone.utc), bloom)
+        carried = {c for c in unpriced if any(c in (r["o"]["c"], r["r"]["c"]) for r in old_rows)}
+        for codes, tail in ((carried, f"先显示 {old_date(old_rows) if old_rows else ''} 扫描的旧价（标“旧价”，不计入今日最低与提醒）"),
+                            (unpriced - carried, "暂时无法比价，请到航司官网查看")):
+            if codes:
+                names = "、".join(cov[c]["airline"] for c in sorted(codes))
+                status_msgs.append(f"{route['name']}：{names} 今天在 Google Flights 有航班但没有报价，{tail}")
         prev_price = {}
         if pr:
             for r in pr["rows"]:
@@ -265,34 +310,30 @@ def main():
         core_all = [r for r in rows if r["n"] in cfg["core_nights"]]
         st = stats([r["p"] for r in core_all])
         airlines = airline_stats(rid, core_all, hist, today)
+        fresh_ak = {a["name"] for a in airlines}
+        old_core = [r for r in old_rows if r["n"] in cfg["core_nights"] and r["ak"] not in fresh_ak]
+        airlines += airline_stats(rid, old_core, hist, today, record=False)
+        airlines.sort(key=lambda a: (a["mixed"], a["min"]))
         by_ak = {a["name"]: a for a in airlines}
-        merged = merge_rows(rows)
-        fallback = {"all": {"avg": st["avg"]}} if st else None
+        merged = merge_rows(rows + old_rows)
+        score_st = st or stats([r["p"] for r in old_core])
+        fallback = {"all": {"avg": score_st["avg"]}} if score_st else None
         for r in merged:
             a = by_ak.get(r["ak"])
             r["rel"] = round((r["p"] - a["avg"]) / a["avg"] * 100, 1) if a else None
-            r["sc"] = score(r, a or fallback, st["min"]) if st else None
+            r["sc"] = score(r, a or fallback, score_st["min"]) if score_st else None
         merged.sort(key=lambda r: (r["p"], r["od"]))
 
-        cov = {}
-        for c in raw["coverage"]:
-            if c["route"] != rid:
-                continue
-            e = cov.setdefault(c["code"], {"airline": c["airline"], "days": 0, "found": 0, "priced": 0, "errors": 0})
-            e["days"] += 1
-            e["found"] += c["count"] > 0
-            e["priced"] += c.get("priced", c["count"]) > 0
-            e["errors"] += c["error"]
-
         core_rows = [r for r in merged if r["n"] in cfg["core_nights"]]
-        top = [r for r in core_rows if {"核心窗口", "接近核心"} & set(r["sks"])][:3]
+        fresh_core = [r for r in core_rows if not r.get("old")]
+        top = [r for r in fresh_core if {"核心窗口", "接近核心"} & set(r["sks"])][:3]
         best = sorted(core_rows, key=lambda r: (-r["sc"][0], r["p"]))[:5]
-        deals = find_deals(route, core_rows, by_ak, cfg)
+        deals = find_deals(route, fresh_core, by_ak, cfg)
         routes_out.append({
             "id": rid, "name": route["name"], "raw_count": n_raw, "stale": False,
             "stats": st, "prev_stats": pr.get("stats") if pr else None,
             "airlines": airlines,
-            "cheapest": core_rows[0] if core_rows else None,
+            "cheapest": fresh_core[0] if fresh_core else None,
             "best": best, "deals": deals,
             "top": top, "coverage": cov, "rows": merged,
         })
