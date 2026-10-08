@@ -9,7 +9,8 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
 MIN_OK_RATIO = 0.3
-CARRY_DAYS = 7  # Google 只给航班不给价时，沿用该航司旧价的最长天数
+CARRY_DAYS = 7  # Google 只给航班不给价时，沿用同一航班旧价的最长天数
+CACHE_DAYS = 30  # docs/leg_prices.json 里的单程价保留天数
 MIXED = "混搭（去回不同航司）"
 
 
@@ -61,11 +62,13 @@ def combine(route_raw, cfg, bloom):
             rd = od + timedelta(days=n)
             for i in by_date_in.get(rd.isoformat(), []):
                 price = pt = fetched = None
+                old = False
                 if o["price"] is not None and i["price"] is not None:
                     price, pt, fetched = o["price"] + i["price"], "单程×2", min(o["fetched_at"], i["fetched_at"])
+                    old = bool(o.get("old") or i.get("old"))
                 x = rt.get((o["dep"], i["dep"])) if o["code"] == i["code"] else None
                 if x and (price is None or x["price"] < price):
-                    price, pt, fetched = x["price"], "往返票", x["fetched_at"]
+                    price, pt, fetched, old = x["price"], "往返票", x["fetched_at"], False
                 if price is None:  # Google 没给价格，不猜
                     continue
                 rows.append({
@@ -77,6 +80,7 @@ def combine(route_raw, cfg, bloom):
                     "bag": baggage_text([o["code"], i["code"]], cfg["baggage"]),
                     "sk": sakura_tag(od, n, bloom),
                     "f": fetched,
+                    **({"old": True} if old else {}),
                 })
     return rows
 
@@ -161,20 +165,23 @@ def old_date(rows):
     return min(r["f"] for r in rows)[:10]
 
 
-def carry_old_rows(pr, codes, now, bloom):
-    """把上一次结果里涉及 codes 航司、且抓取不超过 CARRY_DAYS 天的组合拆回逐日行，标记为旧价。"""
-    out = []
-    for r in pr["rows"] if pr else []:
-        if not {r["o"]["c"], r["r"]["c"]} & codes:
-            continue
-        if now - datetime.fromisoformat(r["f"]) > timedelta(days=CARRY_DAYS):
-            continue
-        for d in r["dates"]:
-            od = date.fromisoformat(d)
-            x = {k: v for k, v in r.items() if k not in ("dates", "sks", "chg", "rel", "sc")}
-            out.append({**x, "od": d, "rd": (od + timedelta(days=r["n"])).isoformat(),
-                        "sk": sakura_tag(od, r["n"], bloom), "old": True, "chg": None})
-    return out
+def leg_key(r):
+    return f"{r['from']}|{r['code']}|{r['dep']}"
+
+
+def fill_old_prices(rr, codes, cache, now):
+    """codes 航司今天完全没有报价：用 CARRY_DAYS 天内同一航班最近一次的单程价补上，并标记为旧价。"""
+    for r in rr["outbound"] + rr["inbound"]:
+        if r["price"] is None and r["code"] in codes:
+            hit = cache.get(leg_key(r))
+            if hit and now - datetime.fromisoformat(hit[1]) <= timedelta(days=CARRY_DAYS):
+                r["price"], r["fetched_at"], r["old"] = hit[0], hit[1], True
+
+
+def update_cache(rr, cache):
+    for r in rr["outbound"] + rr["inbound"]:
+        if r["price"] is not None and not r.get("old"):
+            cache[leg_key(r)] = [r["price"], r["fetched_at"]]
 
 
 SAKURA_PTS = {"核心窗口": 30, "接近核心": 20, "较早": 8, "较晚": 8}
@@ -265,6 +272,8 @@ def main():
     bloom = cfg["sakura"]["full_bloom"]
     today = datetime.now(timezone(timedelta(hours=8))).date().isoformat()
     hist = [h for h in load(DOCS / "history.json", []) if h["date"] != today and "airline" in h]
+    now = datetime.now(timezone.utc)
+    leg_cache = load(DOCS / "leg_prices.json", {})
 
     routes_out, status_msgs = [], []
     for route in cfg["routes"]:
@@ -288,12 +297,19 @@ def main():
             e["priced"] += c.get("priced", c["count"]) > 0
             e["errors"] += c["error"]
 
-        rows = combine(rr, cfg, bloom)
-        # 有航班却完全没有报价（例如 AirAsia 大促期间 Google 不显示价格）：沿用旧价并标出来
+        # 有航班却完全没有报价（例如 AirAsia 大促期间 Google 不显示价格）：用同一航班的旧价补上并标出来
         unpriced = {c for c, e in cov.items() if e["found"] and not e["priced"]}
-        old_rows = carry_old_rows(pr, unpriced, datetime.now(timezone.utc), bloom)
-        carried = {c for c in unpriced if any(c in (r["o"]["c"], r["r"]["c"]) for r in old_rows)}
-        for codes, tail in ((carried, f"先显示 {old_date(old_rows) if old_rows else ''} 扫描的旧价（标“旧价”，不计入今日最低与提醒）"),
+        fill_old_prices(rr, unpriced, leg_cache, now)
+        update_cache(rr, leg_cache)
+        rows = combine(rr, cfg, bloom)
+        old_rows = [r for r in rows if r.get("old")]
+        rows = [r for r in rows if not r.get("old")]
+        for r in old_rows:
+            r["chg"] = None
+        old_legs = [r for r in rr["outbound"] + rr["inbound"] if r.get("old")]
+        carried = {r["code"] for r in old_legs}
+        old_since = min((r["fetched_at"] for r in old_legs), default="")[:10]
+        for codes, tail in ((carried, f"先显示最近一次查到的旧价（{old_since} 起，标“旧价”，不计入今日最低与提醒）"),
                             (unpriced - carried, "暂时无法比价，请到航司官网查看")):
             if codes:
                 names = "、".join(cov[c]["airline"] for c in sorted(codes))
@@ -353,6 +369,9 @@ def main():
     (DOCS / "data.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
     (DOCS / "history.json").write_text(json.dumps(hist, ensure_ascii=False, indent=0), encoding="utf-8")
+    leg_cache = {k: v for k, v in sorted(leg_cache.items())
+                 if now - datetime.fromisoformat(v[1]) <= timedelta(days=CACHE_DAYS)}
+    (DOCS / "leg_prices.json").write_text(json.dumps(leg_cache, separators=(",", ":")), encoding="utf-8")
     print(f"built: " + ", ".join(f"{r['id']} rows={len(r['rows'])}" for r in routes_out))
 
 
