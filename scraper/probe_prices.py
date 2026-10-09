@@ -43,3 +43,37 @@ for frm, to in (("KUL", "KIX"), ("KIX", "KUL")):
 d = call(origin="KUL", destination="KIX", departure_at=months[1], one_way="true", direct="true",
          currency="myr", market="my", sorting="price", limit=5)
 print("SAMPLE", json.dumps(d, ensure_ascii=False)[:2000])
+
+# 用 Travelpayouts 的每日直飞单程最低价，组合出 6/7/8 晚往返（去回可不同航司）
+from collections import defaultdict
+from datetime import timedelta
+best = {}
+for frm, to in (("KUL", "KIX"), ("KIX", "KUL")):
+    for m in months:
+        try:
+            rows = call(origin=frm, destination=to, departure_at=m, one_way="true", direct="true",
+                        currency="myr", market="my", sorting="price", limit=1000).get("data", [])
+        except Exception:
+            continue
+        for r in rows:
+            k = (frm, r["departure_at"][:10])
+            if r.get("transfers", 0) == 0 and (k not in best or r["price"] < best[k]["price"]):
+                best[k] = r
+combos = []
+for (frm, day), o in best.items():
+    if frm != "KUL":
+        continue
+    for n in (6, 7, 8):
+        r = best.get(("KIX", (date.fromisoformat(day) + timedelta(days=n)).isoformat()))
+        if r:
+            combos.append((o["price"] + r["price"], day, n, o, r))
+combos.sort(key=lambda c: c[0])
+fmt = lambda c: f"RM{c[0]:,.0f} | 去 {c[1]} {c[3]['airline']}{c[3].get('flight_number','')} {c[3]['departure_at'][11:16]} RM{c[3]['price']:,.0f} | 回 {c[4]['departure_at'][:10]} {c[4]['airline']}{c[4].get('flight_number','')} {c[4]['departure_at'][11:16]} RM{c[4]['price']:,.0f} | {c[2]}晚"
+print("COMBOS", len(combos), "days KUL", sum(1 for k in best if k[0] == "KUL"), "days KIX", sum(1 for k in best if k[0] == "KIX"))
+for c in combos[:15]:
+    print("TOP", fmt(c))
+by_m = defaultdict(list)
+for c in combos:
+    by_m[c[1][:7]].append(c)
+for m in sorted(by_m):
+    print("MONTHBEST", m, fmt(by_m[m][0]))

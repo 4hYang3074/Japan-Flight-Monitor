@@ -46,8 +46,10 @@ jobs:
         if: steps.promo.outputs.new == 'true'
         env:
           SCAN_ONLY: D7
+          TRAVELPAYOUTS_TOKEN: ${{ secrets.TRAVELPAYOUTS_TOKEN }}
         run: |
           python scraper/scan.py
+          python scraper/tp_fill.py raw_watch.json
           python scraper/watch.py
           python scraper/promo.py report
 

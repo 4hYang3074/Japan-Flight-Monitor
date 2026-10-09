@@ -314,6 +314,10 @@ def main():
             if codes:
                 names = "、".join(cov[c]["airline"] for c in sorted(codes))
                 status_msgs.append(f"{route['name']}：{names} 今天在 Google Flights 有航班但没有报价，{tail}")
+        tp_codes = {r["code"] for r in rr["outbound"] + rr["inbound"] if r.get("source") == "travelpayouts"}
+        if tp_codes:
+            names = "、".join(cov.get(c, {}).get("airline", c) for c in sorted(tp_codes))
+            status_msgs.append(f"{route['name']}：{names} 在 Google Flights 没有报价的航班，改用 Aviasales 最近 2–7 天的缓存价（非实时，下单前请到官网确认）")
         prev_price = {}
         if pr:
             for r in pr["rows"]:

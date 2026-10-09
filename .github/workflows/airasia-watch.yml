@@ -35,6 +35,11 @@ jobs:
           SCAN_ONLY: D7
         run: python scraper/scan.py
 
+      - name: Fill missing prices from Travelpayouts
+        env:
+          TRAVELPAYOUTS_TOKEN: ${{ secrets.TRAVELPAYOUTS_TOKEN }}
+        run: python scraper/tp_fill.py raw_watch.json
+
       - name: Compare with the latest regular scan
         run: python scraper/watch.py
 

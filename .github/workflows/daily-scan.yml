@@ -38,6 +38,11 @@ jobs:
           SCAN_LIMIT_DAYS: ${{ inputs.limit_days }}
         run: python scraper/scan.py
 
+      - name: Fill missing prices from Travelpayouts
+        env:
+          TRAVELPAYOUTS_TOKEN: ${{ secrets.TRAVELPAYOUTS_TOKEN }}
+        run: python scraper/tp_fill.py
+
       # 扫描要跑 30+ 分钟，期间 main 可能已被别的扫描更新。生成的 JSON 无法按文本合并，
       # 所以每次都在最新 main 上重新 build（data/ 被 gitignore，reset 不会动到 raw.json）。
       - name: Build page data and commit
