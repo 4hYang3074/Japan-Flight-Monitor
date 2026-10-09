@@ -1,0 +1,23 @@
+name: Probe fare sources (temporary)
+
+# 临时诊断：只在这个工作分支上运行，不提交任何文件
+on:
+  push:
+    branches: [claude/stoic-newton-suv12u]
+    paths: [scraper/probe_prices.py, .github/workflows/probe-prices.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python scraper/probe_prices.py
