@@ -1,0 +1,53 @@
+name: Explore cheapest dates (one-off)
+
+# 一次性探索扫描：只在这个工作分支上运行，不提交任何文件；结果在运行摘要与 artifact 里
+on:
+  push:
+    branches: [claude/stoic-newton-suv12u]
+    paths: [scraper/explore.py, .github/workflows/explore-scan.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python scraper/explore.py scan ${{ matrix.part }} 6
+      - uses: actions/upload-artifact@v4
+        with:
+          name: explore-${{ matrix.part }}
+          path: data/explore_${{ matrix.part }}.json
+
+  report:
+    needs: scan
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml==6.0.2 fast-flights==3.1.0 typing_extensions==4.15.0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: explore-*
+          path: data
+          merge-multiple: true
+      - run: python scraper/explore.py report | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: explore-report
+          path: data/explore_report.md
