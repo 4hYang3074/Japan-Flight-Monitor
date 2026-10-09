@@ -2,6 +2,7 @@ name: Probe fare sources (temporary)
 
 # 临时诊断：只在这个工作分支上运行，不提交任何文件
 on:
+  workflow_dispatch:
   push:
     branches: [claude/stoic-newton-suv12u]
     paths: [scraper/probe_prices.py, .github/workflows/probe-prices.yml]
@@ -21,3 +22,5 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - run: python scraper/probe_prices.py
+        env:
+          TRAVELPAYOUTS_TOKEN: ${{ secrets.TRAVELPAYOUTS_TOKEN }}

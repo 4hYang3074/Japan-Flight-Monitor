@@ -1,42 +1,45 @@
-"""临时诊断（第二轮）：Google Flights 在所有国家参数下都不给 AirAsia X 报价；
-官网的低价日历接口回 RBAC: access denied（缺请求头）。从官网机票页的 JS 里找出前端实际调用的接口与请求头。"""
-import re
-from urllib.parse import urljoin
+"""临时诊断（第三轮）：Travelpayouts（Aviasales）Data API 能否提供 KUL↔KIX 直飞（含 AirAsia X / Batik）的价格。
+需要仓库 Secret TRAVELPAYOUTS_TOKEN。"""
+import json
+import os
+import sys
+from collections import Counter
+from datetime import date
 
-from primp import Client
+import urllib.request
+from urllib.parse import urlencode
 
-c = Client(impersonate="chrome_145", impersonate_os="macos", referer=True, cookie_store=True)
-PAGES = ["https://www.airasia.com/flight/en/gb",
-         "https://www.airasia.com/flights/search/?origin=KUL&destination=KIX&departDate=10%2F11%2F2026&tripType=O&adult=1&child=0&infant=0&locale=en-gb&currency=MYR&cabinClass=economy"]
-KEYS = re.compile(r"lowfare|lfc/|fare-?calendar|pricecalendar|x-api-key|api[_-]?key|channel_hash|user-type|x-aa-|aaw-|bff|/fp/|flights\.airasia\.com|k\.airasia\.com|search/v\d", re.I)
-HOST = re.compile(r"https?://[a-z0-9.-]*airasia\.com[A-Za-z0-9_/\-.{}$?=&%]*")
+TOKEN = os.environ.get("TRAVELPAYOUTS_TOKEN")
+if not TOKEN:
+    sys.exit("没有 TRAVELPAYOUTS_TOKEN")
 
-hosts, hits, seen = set(), {}, set()
-for page in PAGES:
-    r = c.get(page, headers={"Accept-Language": "en"})
-    print("PAGE", r.status_code, len(r.text), page, flush=True)
-    srcs = re.findall(r'<script[^>]+src="([^"]+)"', r.text)
-    for blob_url, text in [(page, r.text)] + [(urljoin(page, s), None) for s in srcs]:
-        if blob_url in seen:
+
+def call(**params):
+    url = "https://api.travelpayouts.com/aviasales/v3/prices_for_dates?" + urlencode(params)
+    req = urllib.request.Request(url, headers={"X-Access-Token": TOKEN, "Accept-Encoding": "identity"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.loads(r.read().decode())
+
+
+today = date.today()
+months = [f"{today.year + (today.month - 1 + i) // 12}-{(today.month - 1 + i) % 12 + 1:02d}" for i in range(12)]
+for frm, to in (("KUL", "KIX"), ("KIX", "KUL")):
+    total, airlines = 0, Counter()
+    for m in months:
+        try:
+            d = call(origin=frm, destination=to, departure_at=m, one_way="true", direct="true",
+                     currency="myr", market="my", sorting="price", limit=1000)
+        except Exception as e:
+            print("ERROR", frm, to, m, type(e).__name__, str(e)[:200], flush=True)
             continue
-        seen.add(blob_url)
-        if text is None:
-            try:
-                text = c.get(blob_url).text
-            except Exception as e:
-                print("JS ERROR", blob_url, e)
-                continue
-        hosts.update(HOST.findall(text))
-        for m in KEYS.finditer(text):
-            ctx = text[max(0, m.start() - 160): m.end() + 200].replace("\n", " ")
-            k = (m.group(0).lower(), ctx[:80])
-            if k not in hits:
-                hits[k] = (blob_url.rsplit("/", 1)[-1], ctx)
-    print("SCRIPTS", len(srcs), flush=True)
+        rows = d.get("data", [])
+        total += len(rows)
+        airlines.update(r.get("airline") for r in rows)
+        cheapest = rows[0] if rows else None
+        print("MONTH", frm, to, m, "rows", len(rows), "success", d.get("success"), "currency", d.get("currency"),
+              "cheapest", json.dumps(cheapest, ensure_ascii=False), flush=True)
+    print("TOTAL", frm, to, total, dict(airlines), flush=True)
 
-print("=== HOSTS")
-for h in sorted(hosts):
-    print("HOST", h)
-print("=== KEYWORD HITS", len(hits))
-for (k, _), (f, ctx) in list(hits.items())[:150]:
-    print("HIT", k, "|", f, "|", ctx)
+d = call(origin="KUL", destination="KIX", departure_at=months[1], one_way="true", direct="true",
+         currency="myr", market="my", sorting="price", limit=5)
+print("SAMPLE", json.dumps(d, ensure_ascii=False)[:2000])
