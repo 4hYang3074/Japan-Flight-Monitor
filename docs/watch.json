@@ -185,5 +185,52 @@
 3037
 ]
 ]
+},
+{
+"at": "2026-10-07T05:00:49+00:00",
+"slot": "周三 13:00",
+"only": [
+"D7"
+],
+"errors": 0,
+"routes": [
+{
+"route": "KUL-KIX",
+"combos": 96,
+"compared": 96,
+"cheaper": 0,
+"pricier": 3,
+"avg_diff_pct": 0.24,
+"cheapest": {
+"p": 1941,
+"od": "2027-04-19",
+"n": 6,
+"dep": "02:20"
+},
+"best_drop": null
+}
+],
+"alerted": []
+},
+{
+"at": "2026-10-07T17:28:07+00:00",
+"slot": "周四 01:28",
+"only": [
+"D7"
+],
+"errors": 0,
+"routes": [
+{
+"route": "KUL-KIX",
+"combos": 0,
+"compared": 0,
+"cheaper": 0,
+"pricier": 0,
+"avg_diff_pct": null,
+"cheapest": null,
+"best_drop": null
+}
+],
+"alerted": []
 }
 ]

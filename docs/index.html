@@ -280,15 +280,15 @@ function chg(r) {
 function trip(r) {
   const dl = dateList(r.dates, r.n);
   const al = r.o.al === r.r.al ? esc(r.o.al) : `${esc(r.o.al)} / 回 ${esc(r.r.al)}`;
-  return `${dl.out} 出发 · ${r.n}晚 · ${al}（去 ${r.o.dep}，回 ${r.r.dep}）`;
+  return `${dl.out} 出发 · ${r.n}晚 · ${al}（去 ${r.o.dep}，回 ${r.r.dep}）${r.old ? ` · <span class="rise">旧价（${myt(r.f)}）</span>` : ""}`;
 }
 
 function renderTop() {
-  const covOk = D.routes.reduce((s, r) => s + Object.values(r.coverage).filter(c => c.found > 0).length, 0);
+  const covOk = D.routes.reduce((s, r) => s + Object.values(r.coverage).filter(c => (c.priced ?? c.found) > 0).length, 0);
   const covAll = D.routes.reduce((s, r) => s + Object.keys(r.coverage).length, 0);
   $("status").innerHTML = [
     `扫描出发日期 ${fmtD(D.window[0])}–${fmtD(D.window[1])}`,
-    `直飞航司覆盖 ${covOk}/${covAll}`,
+    `有报价的直飞航司 ${covOk}/${covAll}`,
     `更新于 ${myt(D.scanned_at)}（马来西亚时间）`,
     `每人经济舱往返 · MYR`,
   ].map(s => `<span>${s}</span>`).join("");
@@ -336,7 +336,7 @@ function renderConclusion() {
     const best = r.best || [];
     const b = best[0];
     const verd = r.airlines.filter(a => !a.mixed).map(a =>
-      `<li class="${(a.verdict || "").startsWith("创历史新低") ? "new" : ""}"><span>${esc(a.name)} 今日最低 ${rm(a.min)}</span><span>${esc(a.verdict || "下次扫描后显示")}</span></li>`).join("");
+      `<li class="${(a.verdict || "").startsWith("创历史新低") ? "new" : ""}"><span>${esc(a.name)} ${a.old ? "旧价最低" : "今日最低"} ${rm(a.min)}</span><span>${esc(a.verdict || "下次扫描后显示")}</span></li>`).join("");
     return `<div class="card"><h3>${esc(r.name)}</h3>
       <div class="big"><div class="lbl">最便宜的出发日（${D.core_nights.join("/")}晚）</div>
         <div class="val">${rm(r.cheapest.p)} · ${dateList(r.cheapest.dates, r.cheapest.n).out}</div>
@@ -370,7 +370,7 @@ function bagChip(bag) {
 function renderAirlines() {
   const cur = $("airline").value;
   $("airlines").innerHTML = (route.airlines || []).map(a => `<tr data-a="${esc(a.name)}" class="al-row${a.name === cur ? " on" : ""}" aria-expanded="${a.name === cur}">
-    <td><div class="al"><span class="chev" aria-hidden="true">▸</span>${esc(a.name)}</div><div class="sub">直飞 · ${a.n} 个出发日</div></td>
+    <td><div class="al"><span class="chev" aria-hidden="true">▸</span>${esc(a.name)}</div><div class="sub">直飞 · ${a.n} 个出发日${a.old ? ` · <span class="rise">旧价（${fmtD(a.old)}）</span>` : ""}</div></td>
     <td data-l="今日最低"><div class="price">${rm(a.min)}</div><div class="sub">${fmtD(a.low.od)}(${wk(a.low.od)}) 出发 ${a.low.n}晚</div></td>
     <td data-l="今日平均"><div class="price">${rm(a.avg)}</div></td>
     <td data-l="今日最高"><div class="price">${rm(a.max)}</div><div class="sub">${fmtD(a.high.od)} 出发</div></td>
@@ -384,6 +384,7 @@ function renderAirlines() {
     if (!c.found) return `<span class="rise">${esc(c.airline)} 未返回航班</span>`;
     const pr = c.priced ?? c.found;
     const miss = c.found - pr;
+    if (!pr) return `<span class="rise">${esc(c.airline)} 有航班 ${c.found}/${c.days} 天，但 Google 都没给价格</span>`;
     return `${esc(c.airline)} 有航班 ${c.found}/${c.days} 天${miss ? `（其中 ${miss} 天 Google 未给单程价，只能靠往返票价补）` : ""}`;
   }).join(" · ");
   renderCal();
@@ -465,7 +466,7 @@ function renderRows() {
       <td class="c-n">${r.n}晚</td>
       <td class="c-o" data-l="去程">${leg(r.o)}</td>
       <td class="c-r" data-l="回程">${leg(r.r)}</td>
-      <td class="c-p"><div class="price">${rm(r.p)}</div><div class="sub">${r.pt} · 抓取 ${myt(r.f)}</div>${chg(r)}<div class="gf-row">${flightLinks(r)}</div></td>
+      <td class="c-p"><div class="price">${rm(r.p)}</div><div class="sub">${r.pt} · 抓取 ${myt(r.f)}</div>${r.old ? `<div class="rise">旧价：Google 今天没给报价，点“AirAsia 官网”看实时价</div>` : chg(r)}<div class="gf-row">${flightLinks(r)}</div></td>
       <td class="c-sc">${scoreBadge(r.sc)}</td>
       <td class="c-rel">${relBadge(r)}</td>
       <td class="c-bag">${esc(r.bag)}</td>
@@ -567,8 +568,25 @@ function flightLinks(r) {
   const out = legSpec(r.o, r.od, o, k), back = legSpec(r.r, addDays(r.od, r.n), k, o);
   const btn = (href, label) => `<a class="btn gf" href="${esc(href)}" target="_blank" rel="noopener" title="在 Google Flights 打开这组航班">${label} <span aria-hidden="true">↗</span></a>`;
   // 同一家航司：一张来回票（廉航的来回价与两张单程相同，全服务航司来回更便宜）；不同航司只能分开买
-  return r.o.al === r.r.al ? btn(gfUrl([out, back], true), "查看来回")
+  const gf = r.o.al === r.r.al ? btn(gfUrl([out, back], true), "查看来回")
     : `${btn(gfUrl([out], false), "去程")}${btn(gfUrl([back], false), "回程")}`;
+  return gf + aaLinks(r, o, k);
+}
+// Google Flights 不一定有 AirAsia 报价（例如大促期间），给 AirAsia 航班加官网链接，日期航线已填好
+const AA = new Set(["D7", "AK"]);
+function aaUrl(from, to, date, ret) {
+  const d = x => x.split("-").reverse().join("/");
+  const q = new URLSearchParams({ origin: from, destination: to, departDate: d(date), tripType: ret ? "R" : "O",
+    adult: "1", child: "0", infant: "0", locale: "en-gb", currency: "MYR" });
+  if (ret) q.set("returnDate", d(ret));
+  return `https://www.airasia.com/flights/search/?${q}`;
+}
+function aaLinks(r, o, k) {
+  const ret = addDays(r.od, r.n), oa = AA.has(r.o.c), ra = AA.has(r.r.c);
+  if (!oa && !ra) return "";
+  const href = oa && ra ? aaUrl(o, k, r.od, ret) : oa ? aaUrl(o, k, r.od) : aaUrl(k, o, ret);
+  const label = oa && ra ? "AirAsia 官网查今日价" : oa ? "AirAsia 官网查去程" : "AirAsia 官网查回程";
+  return `<a class="btn gf" href="${esc(href)}" target="_blank" rel="noopener" title="在 AirAsia 官网打开，看当下实时价格">${label} <span aria-hidden="true">↗</span></a>`;
 }
 
 // ---- 立即更新：用保存在本机的 token 触发 GitHub Actions ----
