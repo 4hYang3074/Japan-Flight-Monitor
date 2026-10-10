@@ -34,9 +34,7 @@
    "found_at": "2026-10-07T04:55:54+00:00"
   }
  ],
- "errors": [
-  "https://newsroom.airasia.com/news?format=rss: IncompleteRead: IncompleteRead(29799 bytes read, 145485 more expected)"
- ],
+ "errors": [],
  "current": [
   {
    "source": "AirAsia 官网促销页",
@@ -47,6 +45,28 @@
    "expired": false,
    "id": "51050a2cd626",
    "relevant": true
+  },
+  {
+   "source": "AirAsia 官方新闻室",
+   "title": "AirAsia celebrates return of Ahmedabad and Amritsar flights with a special sale",
+   "detail": "To commemorate the long-awaited return of its Ahmedabad and Amritsar routes, AirAsia will be offering its guests special fares to these two vibrant Indian cities with limited time all-in one-way fares",
+   "url": "https://newsroom.airasia.com/news/airasia-celebrates-return-of-ahmedabad-and-amritsar-flights-with-a-special-sale",
+   "published": "2026-10-05",
+   "deadline": null,
+   "expired": false,
+   "id": "16fa5ba0e99a",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官方新闻室",
+   "title": "AirAsia tawar tambang promosi istimewa sempena kembalinya penerbangan ke Ahmedabad dan Amritsar",
+   "detail": "Sempena kembalinya laluan Ahmedabad dan Amritsar yang dinanti-nantikan, AirAsia menawarkan tambang istimewa bagi penerbangan ke dua destinasi ikonik di India ini, dengan tambang termasuk semua sehala ",
+   "url": "https://newsroom.airasia.com/news/airasia-tawar-tambang-promosi-istimewa-sempena-kembalinya-penerbangan-ke-ahmedabad-dan-amritsar",
+   "published": "2026-10-05",
+   "deadline": null,
+   "expired": false,
+   "id": "c0b8d184f99c",
+   "relevant": false
   },
   {
    "source": "AirAsia 官网促销页",
@@ -99,5 +119,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-10-10T19:35:24+00:00"
+ "updated_at": "2026-10-10T20:05:21+00:00"
 }
