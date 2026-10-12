@@ -19,7 +19,8 @@
   "c95c1e023af5": "2026-10-07T04:55:54+00:00",
   "67845e16a7ef": "2026-10-07T04:55:54+00:00",
   "37909b436866": "2026-10-07T04:55:54+00:00",
-  "27d5fc9ea621": "2026-10-07T04:55:54+00:00"
+  "27d5fc9ea621": "2026-10-07T04:55:54+00:00",
+  "ded52a4d8c67": "2026-10-12T02:35:22+00:00"
  },
  "new_history": [
   {
@@ -36,16 +37,6 @@
  ],
  "errors": [],
  "current": [
-  {
-   "source": "AirAsia 官网促销页",
-   "title": "官网大促横幅（代码 MOVE_MEGASALE-Launch_071026_my_en）",
-   "detail": "",
-   "url": "https://www.airasia.com/campaigns/megasale/en/my",
-   "deadline": null,
-   "expired": false,
-   "id": "51050a2cd626",
-   "relevant": true
-  },
   {
    "source": "AirAsia 官方新闻室",
    "title": "AirAsia celebrates return of Ahmedabad and Amritsar flights with a special sale",
@@ -70,16 +61,6 @@
   },
   {
    "source": "AirAsia 官网促销页",
-   "title": "Fly to Vietnam from as low as MYR 300",
-   "detail": "Explore Hanoi, Ho Chi Minh City, Da Nang and more!",
-   "url": "https://www.airasia.com/campaigns/flybeyond-vietnam/en/my/",
-   "deadline": null,
-   "expired": false,
-   "id": "27d5fc9ea621",
-   "relevant": false
-  },
-  {
-   "source": "AirAsia 官网促销页",
    "title": "Get MOVETIX Event🎫 + Flight✈️",
    "detail": "Tickets from MYR 1,350. Save up to 20% when you bundle it. Better value, more partying. T&C apply.",
    "url": "https://www.airasia.com/movetix/en-gb/event/dwp/dwp-2026-jakarta-bundle",
@@ -90,22 +71,12 @@
   },
   {
    "source": "AirAsia 官网促销页",
-   "title": "Planning to balik kampung or explore Malaysia?",
-   "detail": "Be sure to add 10KG checked baggage with flight from MYR 15!",
-   "url": "https://www.airasia.com/flight/en/gb",
-   "deadline": null,
-   "expired": false,
-   "id": "c95c1e023af5",
-   "relevant": false
-  },
-  {
-   "source": "AirAsia 官网促销页",
-   "title": "官网横幅（代码 GMY_China_051026_my_en）",
+   "title": "官网横幅（代码 HOTEL_HOTEL15_121026_my_en）",
    "detail": "",
-   "url": "https://www.airasia.com/flight/en/gb",
+   "url": "https://www.airasia.com/hotels/en/gb",
    "deadline": null,
    "expired": false,
-   "id": "79ce922cf3bc",
+   "id": "ded52a4d8c67",
    "relevant": false
   },
   {
@@ -119,5 +90,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-10-11T08:43:04+00:00"
+ "updated_at": "2026-10-12T02:35:22+00:00"
 }
