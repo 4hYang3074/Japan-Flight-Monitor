@@ -62,6 +62,21 @@ jobs:
           for i in 1 2 3; do git pull --rebase origin main && git push && exit 0; sleep 10; done
           exit 1
 
+      # Publish usable results before failing the completeness gate.
+      - name: Check flight data completeness
+        if: steps.promo.outputs.new == 'true'
+        run: python scraper/quality.py data/raw_watch.json
+
+      - name: Preserve flight diagnostics
+        if: always() && hashFiles('data/raw_watch.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: flight-diagnostics-${{ github.run_id }}
+          path: |
+            data/raw_watch.json
+            data/raw_watch.quality.json
+          retention-days: 14
+
       - name: Notify new promo
         if: steps.promo.outputs.new == 'true'
         env:
