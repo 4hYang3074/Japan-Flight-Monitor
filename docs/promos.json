@@ -84,16 +84,6 @@
   },
   {
    "source": "AirAsia 官网促销页",
-   "title": "官网横幅（代码 FH_WEDNESDEALS_141026_my_en）",
-   "detail": "",
-   "url": "https://www.airasia.com/hotels-promo/hotel-deals/wednesdeals-my/en-gb",
-   "deadline": null,
-   "expired": false,
-   "id": "22999d5009de",
-   "relevant": false
-  },
-  {
-   "source": "AirAsia 官网促销页",
    "title": "官网横幅（代码 HOTEL_HOTEL15_121026_my_en）",
    "detail": "",
    "url": "https://www.airasia.com/hotels/en/gb",
@@ -113,5 +103,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-10-14T07:35:25+00:00"
+ "updated_at": "2026-10-15T02:05:20+00:00"
 }
