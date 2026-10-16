@@ -12,6 +12,7 @@ MIN_OK_RATIO = 0.3
 CARRY_DAYS = 7  # Google 只给航班不给价时，沿用同一航班旧价的最长天数
 CACHE_DAYS = 30  # docs/leg_prices.json 里的单程价保留天数
 MIXED = "混搭（去回不同航司）"
+AIRASIA = {"D7", "AK"}
 
 
 def load(p, default=None):
@@ -246,7 +247,9 @@ def write_alert(routes_out, prev, cfg):
             dates = "、".join(x[5:].replace("-", "/") for x in d["dates"])
             al = d["o"]["al"] if d["o"]["al"] == d["r"]["al"] else f"{d['o']['al']} / 回 {d['r']['al']}"
             lines.append(f"- **RM{d['p']:,}** · {r['name']} · {dates} 出发 {d['n']}晚 · {al}"
-                         f"（去 {d['o']['dep']}，回 {d['r']['dep']}）· 推荐分 {d['sc'][0]}\n  - " + "；".join(d["reasons"]))
+                         f"（去 {d['o']['dep']}，回 {d['r']['dep']}）· 推荐分 {d['sc'][0]}\n  - " + "；".join(d["reasons"])
+                         + ("\n  - ⚠️ AirAsia 的 Google 价可能是已售罄的缓存低价，先在官网航班列表确认再订"
+                            if {d["o"]["c"], d["r"]["c"]} & AIRASIA else ""))
     alert = ROOT / "data" / "alert.md"
     alert.unlink(missing_ok=True)
     if lines:

@@ -78,7 +78,7 @@ tr:last-child td{border-bottom:0}
 .price{font-weight:700;font-size:17px;white-space:nowrap}
 .rel{display:inline-block;border-radius:5px;padding:1px 6px;font-size:12px;white-space:nowrap}
 .rel.g{background:var(--good-bg);color:var(--good)}.rel.r{background:var(--bad-bg);color:var(--bad)}.rel.m{background:var(--mid-bg);color:var(--muted)}
-.drop{color:var(--good);font-size:12.5px}.rise{color:var(--bad);font-size:12.5px}
+.drop{color:var(--good);font-size:12.5px}.rise{color:var(--bad);font-size:12.5px}.aa-note{display:block;color:var(--bad);font-size:12.5px;margin-top:2px}
 .sk{font-size:12.5px;white-space:nowrap}.sk.core{color:var(--accent);font-weight:600}
 .score{display:inline-block;min-width:44px;text-align:center;font-weight:700;font-size:16px;border-radius:8px;padding:3px 6px}
 .score.s1{background:var(--good);color:#fff}.score.s2{background:var(--good-bg);color:var(--good)}.score.s3{background:var(--mid-bg);color:var(--muted)}
@@ -280,7 +280,12 @@ function chg(r) {
 function trip(r) {
   const dl = dateList(r.dates, r.n);
   const al = r.o.al === r.r.al ? esc(r.o.al) : `${esc(r.o.al)} / 回 ${esc(r.r.al)}`;
-  return `${dl.out} 出发 · ${r.n}晚 · ${al}（去 ${r.o.dep}，回 ${r.r.dep}）${r.old ? ` · <span class="rise">旧价（${myt(r.f)}）</span>` : ""}`;
+  return `${dl.out} 出发 · ${r.n}晚 · ${al}（去 ${r.o.dep}，回 ${r.r.dep}）${r.old ? ` · <span class="rise">旧价（${myt(r.f)}）</span>` : ""}${aaNote(r)}`;
+}
+// Google 的 AirAsia 价有时是缓存低价（2026-10 实测：Google 回程 RM843，官网列表同班 RM1,285），提醒以官网列表为准
+function aaNote(r) {
+  return !r.old && (AA.has(r.o.c) || AA.has(r.r.c))
+    ? `<span class="aa-note">AirAsia：Google 价可能是已售罄的缓存低价，以官网航班列表价为准</span>` : "";
 }
 
 function renderTop() {
@@ -311,7 +316,7 @@ function renderTop() {
           <span class="buy-price">${rm(d.p)}</span>
           <span class="buy-what"><b>${dateList(d.dates, d.n).out} 出发 · ${d.n}晚 · ${d.o.al === d.r.al ? esc(d.o.al) : `${esc(d.o.al)} / 回 ${esc(d.r.al)}`}</b>
             <span class="sub">${esc(d.route)} · 去 ${d.o.dep} 回 ${d.r.dep} · ${d.direct ? "直飞" : "转机"} · ${esc(d.bag)}</span>
-            <span class="buy-why">${d.reasons.map(esc).join("；")}</span></span>
+            <span class="buy-why">${d.reasons.map(esc).join("；")}</span>${aaNote(d)}</span>
         </div>
         <div class="gf-row">${flightLinks(d)}</div></li>`).join("")}</ul>
       ${deals.length > SHOW ? `<div class="sub">另有 ${deals.length - SHOW} 个符合条件的组合，可在下方表格按价格查看</div>` : ""}</div>` : "";
@@ -466,7 +471,7 @@ function renderRows() {
       <td class="c-n">${r.n}晚</td>
       <td class="c-o" data-l="去程">${leg(r.o)}</td>
       <td class="c-r" data-l="回程">${leg(r.r)}</td>
-      <td class="c-p"><div class="price">${rm(r.p)}</div><div class="sub">${r.pt} · 抓取 ${myt(r.f)}</div>${r.old ? `<div class="rise">旧价：Google 今天没给报价，点“AirAsia 官网”看实时价</div>` : chg(r)}<div class="gf-row">${flightLinks(r)}</div></td>
+      <td class="c-p"><div class="price">${rm(r.p)}</div><div class="sub">${r.pt} · 抓取 ${myt(r.f)}</div>${r.old ? `<div class="rise">旧价：Google 今天没给报价，点“AirAsia 官网”看实时价</div>` : chg(r) + aaNote(r)}<div class="gf-row">${flightLinks(r)}</div></td>
       <td class="c-sc">${scoreBadge(r.sc)}</td>
       <td class="c-rel">${relBadge(r)}</td>
       <td class="c-bag">${esc(r.bag)}</td>
