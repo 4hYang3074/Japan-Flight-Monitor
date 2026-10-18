@@ -23,7 +23,8 @@
   "ded52a4d8c67": "2026-10-12T02:35:22+00:00",
   "22999d5009de": "2026-10-14T02:05:22+00:00",
   "eace059b8345": "2026-10-14T07:35:25+00:00",
-  "100c0a7f4bef": "2026-10-17T12:19:17+00:00"
+  "100c0a7f4bef": "2026-10-17T12:19:17+00:00",
+  "54440b43751f": "2026-10-18T16:35:21+00:00"
  },
  "new_history": [
   {
@@ -85,22 +86,22 @@
   },
   {
    "source": "AirAsia 官网促销页",
-   "title": "官网横幅（代码 FH_WEEKENDEALS_290826_my_en）",
-   "detail": "",
-   "url": "https://www.airasia.com/snap/en/gb",
-   "deadline": null,
-   "expired": true,
-   "id": "100c0a7f4bef",
-   "relevant": false
-  },
-  {
-   "source": "AirAsia 官网促销页",
    "title": "官网横幅（代码 HOTEL_HOTEL15_121026_my_en）",
    "detail": "",
    "url": "https://www.airasia.com/hotels/en/gb",
    "deadline": null,
    "expired": false,
    "id": "ded52a4d8c67",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
+   "title": "官网横幅（代码 RG_30OFF-Launch_191026_my_en\t\t）",
+   "detail": "",
+   "url": "https://www.airasia.com/flight/en/gb/",
+   "deadline": null,
+   "expired": false,
+   "id": "54440b43751f",
    "relevant": false
   },
   {
@@ -114,5 +115,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-10-17T12:19:17+00:00"
+ "updated_at": "2026-10-18T16:35:21+00:00"
 }
