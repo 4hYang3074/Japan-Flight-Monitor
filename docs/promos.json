@@ -27,9 +27,22 @@
   "54440b43751f": "2026-10-18T16:35:21+00:00",
   "27596e13a36d": "2026-10-19T00:35:21+00:00",
   "0e5c887f7a79": "2026-10-19T02:05:21+00:00",
-  "4e0661a80d98": "2026-10-19T02:35:23+00:00"
+  "4e0661a80d98": "2026-10-19T02:35:23+00:00",
+  "5173579aa54f": "2026-10-19T03:05:23+00:00"
  },
  "new_history": [
+  {
+   "source": "AirAsia 官方新闻室",
+   "title": "AirAsia offers Singapore travellers more flexibility and savings with up to 30% off* All Seats, All Flights sale",
+   "detail": "As Singaporeans prepare for year-end holidays and 2027 adventures, AirAsia is giving Singapore travellers more reasons to book early with its All Seats, All Flights sale, offering up to 30% off* fligh",
+   "url": "https://newsroom.airasia.com/news/airasia-offers-singapore-travellers-more-flexibility-and-savings-with-up-to-30-off-all-seats-all-flights-sale",
+   "published": "2026-10-19",
+   "deadline": null,
+   "expired": false,
+   "id": "5173579aa54f",
+   "relevant": true,
+   "found_at": "2026-10-19T03:05:23+00:00"
+  },
   {
    "source": "AirAsia 官方新闻室",
    "title": "AirAsia gears up for the year-end holiday season with up to 30% off* in its All Seats, All Flights sale",
@@ -66,6 +79,18 @@
    "expired": false,
    "id": "0e5c887f7a79",
    "relevant": true
+  },
+  {
+   "source": "AirAsia 官方新闻室",
+   "title": "AirAsia offers Singapore travellers more flexibility and savings with up to 30% off* All Seats, All Flights sale",
+   "detail": "As Singaporeans prepare for year-end holidays and 2027 adventures, AirAsia is giving Singapore travellers more reasons to book early with its All Seats, All Flights sale, offering up to 30% off* fligh",
+   "url": "https://newsroom.airasia.com/news/airasia-offers-singapore-travellers-more-flexibility-and-savings-with-up-to-30-off-all-seats-all-flights-sale",
+   "published": "2026-10-19",
+   "deadline": null,
+   "expired": false,
+   "id": "5173579aa54f",
+   "relevant": true,
+   "found_at": "2026-10-19T03:05:23+00:00"
   },
   {
    "source": "AirAsia 官方新闻室",
@@ -152,5 +177,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-10-19T02:35:23+00:00"
+ "updated_at": "2026-10-19T03:05:23+00:00"
 }
