@@ -26,7 +26,8 @@
   "100c0a7f4bef": "2026-10-17T12:19:17+00:00",
   "54440b43751f": "2026-10-18T16:35:21+00:00",
   "27596e13a36d": "2026-10-19T00:35:21+00:00",
-  "0e5c887f7a79": "2026-10-19T02:05:21+00:00"
+  "0e5c887f7a79": "2026-10-19T02:05:21+00:00",
+  "4e0661a80d98": "2026-10-19T02:35:23+00:00"
  },
  "new_history": [
   {
@@ -64,8 +65,7 @@
    "deadline": null,
    "expired": false,
    "id": "0e5c887f7a79",
-   "relevant": true,
-   "found_at": "2026-10-19T02:05:21+00:00"
+   "relevant": true
   },
   {
    "source": "AirAsia 官方新闻室",
@@ -111,6 +111,17 @@
    "relevant": false
   },
   {
+   "source": "AirAsia 官方新闻室",
+   "title": "Your Next Great Adventure Awaits: AirAsia Launches \"Up to 30%* Off All Seats, All Flights\" for Year-End Getaways and Beyond",
+   "detail": "The joy of year-end travel is fast approaching, and Thai AirAsia (FD) and Thai AirAsia X (XJ) are making your holiday planning easier than ever! We are going all out with our massive \"Up to 30%* Off A",
+   "url": "https://newsroom.airasia.com/news/your-next-great-adventure-awaits-airasia-launches-up-to-30-off-all-seats-all-flights-for-year-end-getaways-and-beyond",
+   "published": "2026-10-19",
+   "deadline": null,
+   "expired": false,
+   "id": "4e0661a80d98",
+   "relevant": false
+  },
+  {
    "source": "AirAsia 官网促销页",
    "title": "官网横幅（代码 FH_COMBODEAL_191026_my_en）",
    "detail": "",
@@ -141,5 +152,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-10-19T02:05:21+00:00"
+ "updated_at": "2026-10-19T02:35:23+00:00"
 }
