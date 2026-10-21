@@ -116,6 +116,16 @@
   },
   {
    "source": "AirAsia 官网促销页",
+   "title": "Fly to Vietnam from as low as MYR 300",
+   "detail": "Explore Hanoi, Ho Chi Minh City, Da Nang and more!",
+   "url": "https://www.airasia.com/campaigns/flybeyond-vietnam/en/my/",
+   "deadline": null,
+   "expired": false,
+   "id": "27d5fc9ea621",
+   "relevant": false
+  },
+  {
+   "source": "AirAsia 官网促销页",
    "title": "Get MOVETIX Event🎫 + Flight✈️",
    "detail": "Tickets from MYR 1,350. Save up to 20% when you bundle it. Better value, more partying. T&C apply.",
    "url": "https://www.airasia.com/movetix/en-gb/event/dwp/dwp-2026-jakarta-bundle",
@@ -177,5 +187,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-10-19T10:05:23+00:00"
+ "updated_at": "2026-10-21T03:35:13+00:00"
 }
