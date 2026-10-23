@@ -467,5 +467,31 @@
 }
 ],
 "alerted": []
+},
+{
+"at": "2026-10-23T18:20:30+00:00",
+"slot": "周六 02:20",
+"only": [
+"D7"
+],
+"errors": 0,
+"routes": [
+{
+"route": "KUL-KIX",
+"combos": 96,
+"compared": 96,
+"cheaper": 0,
+"pricier": 0,
+"avg_diff_pct": -0.04,
+"cheapest": {
+"p": 1950,
+"od": "2027-04-19",
+"n": 7,
+"dep": "02:20"
+},
+"best_drop": null
+}
+],
+"alerted": []
 }
 ]
