@@ -30,7 +30,8 @@
   "4e0661a80d98": "2026-10-19T02:35:23+00:00",
   "5173579aa54f": "2026-10-19T03:05:23+00:00",
   "b922b9b3398f": "2026-10-19T03:35:21+00:00",
-  "8d02a9cb3fbf": "2026-10-19T03:35:21+00:00"
+  "8d02a9cb3fbf": "2026-10-19T03:35:21+00:00",
+  "c1ee518c3eea": "2026-10-26T03:15:27+00:00"
  },
  "new_history": [
   {
@@ -95,16 +96,6 @@
   },
   {
    "source": "AirAsia 官网促销页",
-   "title": "Bundle up with flight, save more!",
-   "detail": "Baggage, seat, meal & more bundled at up to 30% less? Yes, please!",
-   "url": "https://www.airasia.com/flight/en/gb",
-   "deadline": null,
-   "expired": false,
-   "id": "8d02a9cb3fbf",
-   "relevant": false
-  },
-  {
-   "source": "AirAsia 官网促销页",
    "title": "Fly to Vietnam from as low as MYR 300",
    "detail": "Explore Hanoi, Ho Chi Minh City, Da Nang and more!",
    "url": "https://www.airasia.com/campaigns/flybeyond-vietnam/en/my/",
@@ -147,12 +138,12 @@
   },
   {
    "source": "AirAsia 官网促销页",
-   "title": "官网横幅（代码 FH_COMBODEAL_191026_my_en）",
+   "title": "官网横幅（代码 GMY_HongKong_261026_my_en）",
    "detail": "",
-   "url": "https://www.airasia.com/snap/en/gb/",
+   "url": "https://www.airasia.com/flight/en/gb",
    "deadline": null,
    "expired": false,
-   "id": "27596e13a36d",
+   "id": "c1ee518c3eea",
    "relevant": false
   },
   {
@@ -164,17 +155,7 @@
    "expired": false,
    "id": "ded52a4d8c67",
    "relevant": false
-  },
-  {
-   "source": "AirAsia 官网促销页",
-   "title": "官网横幅（代码 RG_30OFF-Launch_191026_my_en\t）",
-   "detail": "",
-   "url": "https://www.airasia.com/flight/en/gb/",
-   "deadline": null,
-   "expired": false,
-   "id": "b922b9b3398f",
-   "relevant": false
   }
  ],
- "updated_at": "2026-10-23T05:59:15+00:00"
+ "updated_at": "2026-10-26T03:15:27+00:00"
 }
