@@ -31,7 +31,8 @@
   "5173579aa54f": "2026-10-19T03:05:23+00:00",
   "b922b9b3398f": "2026-10-19T03:35:21+00:00",
   "8d02a9cb3fbf": "2026-10-19T03:35:21+00:00",
-  "c1ee518c3eea": "2026-10-26T03:15:27+00:00"
+  "c1ee518c3eea": "2026-10-26T03:15:27+00:00",
+  "4e84d7f08005": "2026-10-27T04:05:21+00:00"
  },
  "new_history": [
   {
@@ -96,12 +97,12 @@
   },
   {
    "source": "AirAsia 官网促销页",
-   "title": "Fly to Vietnam from as low as MYR 300",
-   "detail": "Explore Hanoi, Ho Chi Minh City, Da Nang and more!",
-   "url": "https://www.airasia.com/campaigns/flybeyond-vietnam/en/my/",
+   "title": "Fly to China from MYR 580",
+   "detail": "Book now with code FLYCHINA to save extra MYR 200",
+   "url": "https://www.airasia.com/campaigns/flybeyond-china/en/my/",
    "deadline": null,
    "expired": false,
-   "id": "27d5fc9ea621",
+   "id": "4e84d7f08005",
    "relevant": false
   },
   {
@@ -146,5 +147,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-10-26T04:05:21+00:00"
+ "updated_at": "2026-10-27T04:05:21+00:00"
 }
