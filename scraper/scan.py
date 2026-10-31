@@ -1,6 +1,7 @@
 """每日扫描：逐天抓取各航线两个方向的单程航班（Google Flights），输出 data/raw.json。"""
 import json
 import os
+import re
 import time
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -9,6 +10,8 @@ import yaml
 from fast_flights import FlightQuery, create_query, fetch_flights_html
 from fast_flights.parser import _parse_time
 from selectolax.lexbor import LexborHTMLParser
+
+from quality import query_status
 
 ROOT = Path(__file__).resolve().parent.parent
 SLEEP = 1.5
@@ -40,26 +43,56 @@ def fetch(frm, to, d, currency, airlines=None, max_stops=None):
     return run(q)
 
 
+class SourceError(ValueError):
+    """Transport/interstitial/upstream error, never evidence of no flights."""
+
+
 def parse(html):
     """解析 Google Flights 结果。与 fast-flights 自带解析器不同：Google 没给价格的航班也保留（price=None），
-    真的没有航班返回 []，页面结构异常才抛错（由 run() 重试）。"""
-    script = LexborHTMLParser(html).css_first(r"script.ds\:1")
+    有效空列表返回 []（仅代表数据源未列出航班），页面结构异常抛错并重试。"""
+    parser = LexborHTMLParser(html)
+    title = parser.css_first("title")
+    if title and any(x in title.text().lower() for x in ("before you continue", "access denied", "unusual traffic")):
+        raise SourceError("Google 返回同意页或访问限制页")
+    script = parser.css_first(r"script.ds\:1")
     if script is None:
         raise ValueError("结果页缺少数据块")
+    if re.search(r"errorHasStatus\s*:\s*true", script.text()):
+        raise SourceError("Google errorHasStatus=true")
     data = script.text().split("data:", 1)[1].rsplit(",", 1)[0]
-    if data.endswith("errorHasStatus: true"):
-        return []
     payload = json.loads(data)
-    if not payload[3] or payload[3][0] is None:
-        return []
+    if not isinstance(payload, list) or len(payload) < 4:
+        raise ValueError("结果数据结构异常")
+    items = []
+    for block in (payload[2], payload[3]):
+        if block is None:
+            continue
+        if not isinstance(block, list) or not block:
+            raise ValueError("航班区块结构异常")
+        if block[0] is not None:
+            if not isinstance(block[0], list):
+                raise ValueError("航班列表结构异常")
+            items.extend(block[0])
+    if payload[2] is None and payload[3] is None:
+        raise ValueError("缺少航班结果区块")
     out = []
-    for k in payload[3][0]:
+    seen = {}
+    for k in items:
         fl = k[0]
         price = k[1][0][1] if k[1] and k[1][0] else None
         legs = [{"from": s[3], "to": s[6],
                  "dep": datetime(*s[20], *_parse_time(s[8])),
                  "arr": datetime(*s[21], *_parse_time(s[10]))} for s in fl[2]]
-        out.append({"code": fl[0], "airlines": fl[1], "legs": legs, "price": price})
+        if not legs or not isinstance(fl[0], str) or not isinstance(fl[1], list) or not fl[1]:
+            raise ValueError("航班字段不完整")
+        if price is not None and (isinstance(price, bool) or not isinstance(price, (int, float)) or price <= 0):
+            raise ValueError("价格字段异常")
+        key = (fl[0], tuple((l["from"], l["to"], l["dep"], l["arr"]) for l in legs))
+        rec = {"code": fl[0], "airlines": fl[1], "legs": legs, "price": price}
+        old = seen.get(key)
+        if old is None or (price is not None and (old["price"] is None or price < old["price"])):
+            seen[key] = rec
+    out = list(seen.values())
     return out
 
 
@@ -68,10 +101,15 @@ def run(q):
     last = None
     for attempt in range(RETRIES):
         try:
-            return parse(fetch_flights_html(q)), None
+            try:
+                html = fetch_flights_html(q)
+            except Exception as e:
+                raise SourceError(f"请求失败: {type(e).__name__}") from e
+            return parse(html), None
         except Exception as e:
             last = f"{type(e).__name__}: {e}"
-            time.sleep(5 * (attempt + 1))
+            if attempt + 1 < RETRIES:
+                time.sleep(5 * (attempt + 1))
     return [], last
 
 
@@ -163,12 +201,19 @@ def scan_day(frm, to, d, route, cfg, errors, coverage, only=None):
             continue
         flights, err = fetch(frm, to, d, cur, airlines=[code], max_stops=0)
         now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        if any(f["code"] != code or len(f["legs"]) != 1 or
+               f["legs"][0]["from"] != frm or f["legs"][0]["to"] != to or
+               f["legs"][0]["dep"].date() != d for f in flights):
+            err = "SourceError: 航班响应与请求的航司、日期或直飞航线不符"
+            flights = []
         if err:
             errors.append(f"{frm}->{to} {d} {code}: {err}")
         recs = [to_record(f, utc, now, f"airline:{code}") for f in flights if len(f["legs"]) == 1]
         coverage.append({"route": route["id"], "from": frm, "date": d.isoformat(), "code": code,
                          "airline": name, "count": len(recs),
-                         "priced": sum(r["price"] is not None for r in recs), "error": bool(err)})
+                         "priced": sum(r["price"] is not None for r in recs), "error": bool(err),
+                         "status": query_status(len(recs), sum(r["price"] is not None for r in recs), err),
+                         "detail": err})
         for r in recs:
             add(r)
         time.sleep(SLEEP)
