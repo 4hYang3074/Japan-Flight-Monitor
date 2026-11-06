@@ -33,7 +33,8 @@
   "8d02a9cb3fbf": "2026-10-19T03:35:21+00:00",
   "c1ee518c3eea": "2026-10-26T03:15:27+00:00",
   "4e84d7f08005": "2026-10-27T04:05:21+00:00",
-  "31c8157cb485": "2026-10-28T07:44:05+00:00"
+  "31c8157cb485": "2026-10-28T07:44:05+00:00",
+  "6dac46f67a9d": "2026-11-06T10:44:22+00:00"
  },
  "new_history": [
   {
@@ -86,6 +87,17 @@
    "relevant": true
   },
   {
+   "source": "AirAsia 官方新闻室",
+   "title": "AirAsia Philippines launches biggest 11.11 Fly-Thru sale to new destinations in India, Kazakhstan and the Maldives",
+   "detail": "06 Nov 2026, Manila — AirAsia Philippines is encouraging travelers to explore new destinations as it launches its biggest Fly-Thru sale this 11.11 , opening more opportunities to reach farther destina",
+   "url": "https://newsroom.airasia.com/stories/2026/11/6/airasia-philippines-launches-biggest-1111-fly-thru-sale-to-new-destinations-in-india-kazakhstan-and-the-maldives",
+   "published": "2026-11-06",
+   "deadline": null,
+   "expired": false,
+   "id": "6dac46f67a9d",
+   "relevant": false
+  },
+  {
    "source": "AirAsia 官网促销页",
    "title": "Fly to China from MYR 580",
    "detail": "Book now with code FLYCHINA to save extra MYR 200",
@@ -127,5 +139,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-11-03T03:55:02+00:00"
+ "updated_at": "2026-11-06T10:44:22+00:00"
 }
