@@ -56,6 +56,20 @@ jobs:
           done
           exit 1
 
+      # Publish usable results before failing the completeness gate.
+      - name: Check flight data completeness
+        run: python scraper/quality.py data/raw.json
+
+      - name: Preserve flight diagnostics
+        if: always() && hashFiles('data/raw.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: flight-diagnostics-${{ github.run_id }}
+          path: |
+            data/raw.json
+            data/raw.quality.json
+          retention-days: 14
+
       - name: Notify good deals
         if: hashFiles('data/alert.md') != ''
         env:
