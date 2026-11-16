@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import yaml
 
+from quality import summarize
 from build import DOCS, ROOT, combine, load, row_key
 
 DROP_PCT = 5
@@ -41,7 +42,10 @@ def main():
                 drops.append({**r, "was": old, "pct": round(pct, 1)})
         drops.sort(key=lambda r: r["pct"])
         cheapest = min(rows, key=lambda r: r["p"], default=None)
+        route = next(r for r in cfg["routes"] if r["id"] == rid)
+        quality = summarize(route, raw.get("coverage", []), rows, raw.get("only", []))
         entry_routes.append({
+            "quality": quality, "incomplete": any(q["status"] != "ok" for q in quality.values()),
             "route": rid, "combos": len(rows), "compared": len(diffs),
             "cheaper": sum(d < -0.5 for d in diffs), "pricier": sum(d > 0.5 for d in diffs),
             "avg_diff_pct": round(sum(diffs) / len(diffs), 2) if diffs else None,

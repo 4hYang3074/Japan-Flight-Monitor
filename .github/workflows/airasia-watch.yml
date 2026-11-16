@@ -48,6 +48,20 @@ jobs:
           git pull --rebase origin main
           git push
 
+      # Publish usable results before failing the completeness gate.
+      - name: Check flight data completeness
+        run: python scraper/quality.py data/raw_watch.json
+
+      - name: Preserve flight diagnostics
+        if: always() && hashFiles('data/raw_watch.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: flight-diagnostics-${{ github.run_id }}
+          path: |
+            data/raw_watch.json
+            data/raw_watch.quality.json
+          retention-days: 14
+
       - name: Notify cheaper fares
         if: hashFiles('data/alert.md') != ''
         env:

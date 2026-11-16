@@ -302,7 +302,7 @@ function renderTop() {
   $("warn").innerHTML = w.map(s => `<div class="warn">${esc(s)}</div>`).join("");
 
   $("quick").innerHTML = D.routes.map(r => r.cheapest ? `<div class="qk">
-      <div class="t">${esc(r.name)} · 今日最便宜${r.stale ? "（沿用上次数据）" : ""}</div>
+      <div class="t">${esc(r.name)} · 已取得报价中最便宜${r.incomplete ? "（比价不完整）" : ""}${r.stale ? "（沿用上次数据）" : ""}</div>
       <div class="p">${rm(r.cheapest.p)}</div>
       <div class="sub">${trip(r.cheapest)}</div></div>` : `<div class="qk"><div class="t">${esc(r.name)}</div>暂无已确认价格</div>`).join("");
 
@@ -386,6 +386,8 @@ function renderAirlines() {
     <td data-l="最低价航班"><div class="gf-row">${lowLinks(a)}</div></td></tr>${a.name === cur
       ? `<tr class="cal-row"><td colspan="9"><div class="cal-wrap" id="cal-wrap"><div class="cal" id="cal"></div></div></td></tr>` : ""}`).join("");
   $("cov").innerHTML = "直飞查询覆盖（去程+回程查询天数）：" + Object.values(route.coverage).map(c => {
+    const q = Object.values(route.quality || {}).find(q => q.airline === c.airline);
+    if (q && q.status !== "ok") return `<span class="rise">${esc(c.airline)}：${esc(q.message)}</span>`;
     if (!c.found) return `<span class="rise">${esc(c.airline)} 未返回航班</span>`;
     const pr = c.priced ?? c.found;
     const miss = c.found - pr;
@@ -511,23 +513,23 @@ $("main-head").onclick = e => {
 };
 
 function renderWatch(list) {
-  const runs = list.flatMap(w => w.routes.filter(r => r.compared).map(r => ({ ...r, at: w.at, slot: w.slot })));
+  const runs = list.flatMap(w => w.routes.map(r => ({ ...r, at: w.at, slot: w.slot })));
   if (!runs.length) return;
   const pct = v => v == null ? "—" : `${v > 0 ? "+" : ""}${v}%`;
   const groups = {};
-  for (const r of runs) (groups[r.slot.slice(0, 5)] ||= []).push(r);
+  for (const r of runs.filter(r => r.compared)) (groups[r.slot.slice(0, 5)] ||= []).push(r);
   const summary = Object.entries(groups).map(([slot, rs]) => {
     const avg = rs.reduce((s, r) => s + r.avg_diff_pct, 0) / rs.length;
     const hits = rs.filter(r => r.best_drop).length;
     return `<li><b>${slot}时</b>：${rs.length} 次，平均比例行扫描 ${pct(Math.round(avg * 10) / 10)}，其中 ${hits} 次出现便宜 5% 以上的组合</li>`;
   }).join("");
   const recent = runs.slice(-10).reverse().map(r => `<tr>
-      <td>${myt(r.at)}<div class="sub">${esc(r.slot)}</div></td>
+      <td>${myt(r.at)}<div class="sub">${esc(r.slot)}</div>${!r.combos ? `<div class="rise">${esc(Object.values(r.quality || {}).filter(q => q.status !== "ok").map(q => q.message).join("；") || "无可比报价（旧记录未保存原因）")}</div>` : ""}</td>
       <td>${r.cheapest ? `<b>${rm(r.cheapest.p)}</b><div class="sub">${fmtD(r.cheapest.od)} 出发 ${r.cheapest.n}晚</div>` : "—"}</td>
       <td>${r.cheaper} 个更便宜 / ${r.pricier} 个更贵<div class="sub">共比较 ${r.compared} 个组合</div></td>
       <td>${pct(r.avg_diff_pct)}</td>
       <td>${r.best_drop ? `<span class="drop">${rm(r.best_drop.was)} → ${rm(r.best_drop.p)}（${r.best_drop.pct}%）</span><div class="sub">${fmtD(r.best_drop.od)} 出发 ${r.best_drop.n}晚</div>` : `<span class="sub">无</span>`}</td></tr>`).join("");
-  $("watch").innerHTML = `<b>各时段累计结果</b>（负数＝比最近一次例行扫描便宜）<ul>${summary}</ul>
+  $("watch").innerHTML = `<b>各时段累计结果</b>（负数＝比最近一次例行扫描便宜）<ul>${summary || "<li>尚无可比较的扫描，不能判断价格变化。</li>"}</ul>
     <div class="tbl" style="margin-top:8px"><table><thead><tr><th>加扫时间</th><th>当次最便宜</th><th>跟例行扫描同一组合比</th><th>平均差</th><th>最大降幅</th></tr></thead><tbody>${recent}</tbody></table></div>
     <div class="hint">只比较 KUL↔KIX AirAsia X 直飞 ${D.core_nights.join("/")} 晚的同一组合（同日期、同航班）。累积几周后就能看出这些时段是不是真的比较便宜。</div>`;
 }

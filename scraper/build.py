@@ -6,6 +6,8 @@ from pathlib import Path
 
 import yaml
 
+from quality import summarize
+
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
 MIN_OK_RATIO = 0.3
@@ -284,9 +286,18 @@ def main():
         rr = raw["routes"].get(rid, {"outbound": [], "inbound": []})
         n_raw = len(rr["outbound"]) + len(rr["inbound"])
         pr = prev_routes.get(rid)
+        fresh_rows = [r for r in combine(rr, cfg, bloom) if r["n"] in cfg["core_nights"]]
+        quality = summarize(route, raw["coverage"], fresh_rows)
+        incomplete = any(q["status"] != "ok" for q in quality.values())
+        for q in quality.values():
+            if q["status"] != "ok":
+                status_msgs.append(f"{route['name']}：{q['airline']} {q['message']}；当前最低价比较不完整")
         if pr and n_raw < pr.get("raw_count", 0) * MIN_OK_RATIO:
             status_msgs.append(f"{route['name']} 今天抓取结果异常偏少（{n_raw} 笔），保留上一次的数据")
             pr["stale"] = True
+            pr["quality"] = quality
+            pr["incomplete"] = True
+            pr["deals"] = []
             routes_out.append(pr)
             continue
 
@@ -350,6 +361,7 @@ def main():
         deals = find_deals(route, fresh_core, by_ak, cfg)
         routes_out.append({
             "id": rid, "name": route["name"], "raw_count": n_raw, "stale": False,
+            "quality": quality, "incomplete": incomplete,
             "stats": st, "prev_stats": pr.get("stats") if pr else None,
             "airlines": airlines,
             "cheapest": fresh_core[0] if fresh_core else None,
