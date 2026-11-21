@@ -4475,5 +4475,82 @@
 "median": 3403,
 "avg": 3403,
 "min_od": "2027-03-20"
+},
+{
+"date": "2026-11-22",
+"route": "KUL-KIX",
+"airline": "混搭（去回不同航司）",
+"n": 32,
+"min": 4110,
+"max": 6467,
+"median": 5205,
+"avg": 5131,
+"min_od": "2027-03-22"
+},
+{
+"date": "2026-11-22",
+"route": "KUL-KIX",
+"airline": "AirAsia X",
+"n": 31,
+"min": 2204,
+"max": 2898,
+"median": 2551,
+"avg": 2498,
+"min_od": "2027-04-13"
+},
+{
+"date": "2026-11-22",
+"route": "KUL-KIX",
+"airline": "Malaysia Airlines",
+"n": 31,
+"min": 5184,
+"max": 9213,
+"median": 7145,
+"avg": 6947,
+"min_od": "2027-04-16"
+},
+{
+"date": "2026-11-22",
+"route": "SIN-KIX",
+"airline": "混搭（去回不同航司）",
+"n": 32,
+"min": 2715,
+"max": 6788,
+"median": 3720,
+"avg": 3936,
+"min_od": "2027-03-21"
+},
+{
+"date": "2026-11-22",
+"route": "SIN-KIX",
+"airline": "Scoot",
+"n": 28,
+"min": 2154,
+"max": 3267,
+"median": 2451,
+"avg": 2438,
+"min_od": "2027-04-12"
+},
+{
+"date": "2026-11-22",
+"route": "SIN-KIX",
+"airline": "Peach Aviation",
+"n": 2,
+"min": 3106,
+"max": 3404,
+"median": 3255,
+"avg": 3255,
+"min_od": "2027-03-21"
+},
+{
+"date": "2026-11-22",
+"route": "SIN-KIX",
+"airline": "Singapore Airlines",
+"n": 30,
+"min": 2880,
+"max": 4957,
+"median": 3926,
+"avg": 3949,
+"min_od": "2027-04-14"
 }
 ]
