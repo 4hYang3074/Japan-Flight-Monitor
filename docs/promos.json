@@ -74,7 +74,9 @@
    "found_at": "2026-10-07T04:55:54+00:00"
   }
  ],
- "errors": [],
+ "errors": [
+  "https://newsroom.airasia.com/news?format=rss: ParseError: undefined entity: line 236, column 3580"
+ ],
  "current": [
   {
    "source": "AirAsia 官方新闻室",
@@ -85,17 +87,6 @@
    "deadline": null,
    "expired": false,
    "id": "6dac46f67a9d",
-   "relevant": false
-  },
-  {
-   "source": "AirAsia 官方新闻室",
-   "title": "AirAsia rolls out exclusive Asean travel deals with fares from RM119* and up to 30% off Value Pack",
-   "detail": "AirAsia is rolling out an exclusive Asean travel deal, with fares from RM119*, giving travellers more opportunities to explore destinations across its extensive network. With travel available through ",
-   "url": "https://newsroom.airasia.com/news/airasia-rolls-out-exclusive-asean-travel-deals-with-fares-from-rm119-and-up-to-30-off-value-pack",
-   "published": "2026-11-16",
-   "deadline": null,
-   "expired": false,
-   "id": "60da2fc04e76",
    "relevant": false
   },
   {
@@ -129,5 +120,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-11-16T08:32:51+00:00"
+ "updated_at": "2026-11-22T19:29:22+00:00"
 }
