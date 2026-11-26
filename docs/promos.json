@@ -75,7 +75,7 @@
   }
  ],
  "errors": [
-  "https://newsroom.airasia.com/news?format=rss: ParseError: undefined entity: line 242, column 3580"
+  "https://newsroom.airasia.com/news?format=rss: ParseError: undefined entity: line 287, column 3580"
  ],
  "current": [
   {
@@ -120,5 +120,5 @@
    "relevant": false
   }
  ],
- "updated_at": "2026-11-25T18:49:17+00:00"
+ "updated_at": "2026-11-26T10:46:15+00:00"
 }
